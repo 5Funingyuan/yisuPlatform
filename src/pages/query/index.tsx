@@ -1,7 +1,7 @@
 import Taro from '@tarojs/taro'
-import { View, Text, ScrollView, Picker, Image } from '@tarojs/components'
-import { AtButton, AtSearchBar, AtIcon } from 'taro-ui'
-import { useMemo, useState } from 'react'
+import { View, Text, ScrollView, Picker, Image, Swiper, SwiperItem, Input } from '@tarojs/components'
+import { AtIcon } from 'taro-ui'
+import { useState } from 'react'
 import { hotelCards } from './mock'
 import './style.less'
 
@@ -12,6 +12,9 @@ const PROMO_BLOCKS = [
   { title: '附近热卖', subTitle: '2公里内', color: 'red' },
   { title: '超值低价', subTitle: '7折起', color: 'blue' },
 ] as const
+
+const QUICK_FILTER_TAGS = ['亲子', '豪华', '免费停车场', '含早餐', '可取消', '近地铁'] as const
+const QUICK_TAG_PREVIEW_COUNT = 3
 
 const formatToYmd = (date: Date) => {
   const year = date.getFullYear()
@@ -37,22 +40,15 @@ export default function QueryPage() {
   const today = getToday()
   const [activeScene, setActiveScene] = useState<(typeof SCENE_TABS)[number]>('国内')
   const [keyword, setKeyword] = useState('深圳会展中心')
-  const [locationName, setLocationName] = useState('定位中...')
+  const [locationName, setLocationName] = useState('上海')
   const [isLocating, setIsLocating] = useState(false)
+  const [showAllQuickTags, setShowAllQuickTags] = useState(false)
   const [checkInDate, setCheckInDate] = useState(today)
   const [checkOutDate, setCheckOutDate] = useState(addDays(today, 1))
 
-  const displayHotels = useMemo(() => {
-    return hotelCards.filter((hotel) => {
-      const matchKeyword =
-        keyword.trim() === '' ||
-        hotel.name.includes(keyword) ||
-        hotel.address.includes(keyword) ||
-        hotel.tags.some((tag) => tag.includes(keyword))
-
-      return matchKeyword
-    })
-  }, [keyword])
+  const bannerHotels = hotelCards.slice(0, 3)
+  const visibleQuickTags = showAllQuickTags ? QUICK_FILTER_TAGS : QUICK_FILTER_TAGS.slice(0, QUICK_TAG_PREVIEW_COUNT)
+  const canExpandQuickTags = QUICK_FILTER_TAGS.length > QUICK_TAG_PREVIEW_COUNT
 
   const handleLocate = async () => {
     if (isLocating) {
@@ -64,10 +60,9 @@ export default function QueryPage() {
       const location = await Taro.getLocation({ type: 'gcj02' })
       const latitude = Number(location.latitude).toFixed(4)
       const longitude = Number(location.longitude).toFixed(4)
-      setLocationName(`已定位 (${latitude}, ${longitude})`)
+      setLocationName(`已定位 ${latitude},${longitude}`)
       Taro.showToast({ title: '定位成功', icon: 'success' })
     } catch (error) {
-      setLocationName('定位失败，请手动输入城市')
       Taro.showToast({ title: '定位失败，请检查授权', icon: 'none' })
     } finally {
       setIsLocating(false)
@@ -111,10 +106,10 @@ export default function QueryPage() {
     setCheckOutDate(nextCheckOut)
   }
 
-  const handleSearch = () => {
+  const handleSearch = (nextKeyword = keyword) => {
     const queryString = [
       `scene=${encodeURIComponent(activeScene)}`,
-      `keyword=${encodeURIComponent(keyword)}`,
+      `keyword=${encodeURIComponent(nextKeyword)}`,
       `location=${encodeURIComponent(locationName)}`,
       `checkIn=${encodeURIComponent(checkInDate)}`,
       `checkOut=${encodeURIComponent(checkOutDate)}`,
@@ -125,21 +120,57 @@ export default function QueryPage() {
     })
   }
 
+  const handleKeywordInput = (event: { detail: { value: string } }) => {
+    setKeyword(event.detail.value)
+  }
+
+  const handleKeywordConfirm = (event?: { detail: { value: string } }) => {
+    const nextKeyword = event?.detail?.value ?? keyword
+    setKeyword(nextKeyword)
+    handleSearch(nextKeyword)
+  }
+
   return (
     <View className='query-page'>
       <ScrollView className='query-scroll' scrollY>
-        <View className='banner-card' onClick={() => openHotelDetail(hotelCards[1].id)}>
-          <Text className='banner-badge'>限时热促 · 家庭出游</Text>
-          <Text className='banner-title'>{hotelCards[1].name}</Text>
-          <Text className='banner-desc'>亲子酒店 7 折起，点击直达详情页</Text>
-          <View className='banner-bottom'>
-            <Text className='banner-price'>¥{hotelCards[1].price} 起/晚</Text>
-            <View className='banner-cta'>
-              <Text className='banner-cta-text'>立即查看</Text>
-              <AtIcon value='chevron-right' size='14' color='#1d4ed8' />
-            </View>
-          </View>
-        </View>
+        <Swiper
+          className='banner-swiper'
+          circular
+          autoplay
+          interval={3200}
+          duration={500}
+          indicatorDots
+          indicatorColor='rgba(255,255,255,0.45)'
+          indicatorActiveColor='#ffffff'
+        >
+          {bannerHotels.map((hotel) => (
+            <SwiperItem key={hotel.id}>
+              <View className='banner-card' onClick={() => openHotelDetail(hotel.id)}>
+                <Image className='banner-bg' mode='aspectFill' src={hotel.coverImage} lazyLoad />
+                <View className='banner-mask' />
+
+                <View className='banner-content'>
+                  <View className='banner-tags'>
+                    {[hotel.star, ...hotel.tags.slice(0, 2)].map((tag) => (
+                      <Text key={tag} className='banner-pill'>
+                        {tag}
+                      </Text>
+                    ))}
+                  </View>
+                  <Text className='banner-title'>{hotel.name}</Text>
+                  <Text className='banner-desc'>{hotel.promo}</Text>
+                  <View className='banner-bottom'>
+                    <Text className='banner-price'>¥{hotel.price} 起/晚</Text>
+                    <View className='banner-cta'>
+                      <Text className='banner-cta-text'>立即查看</Text>
+                      <AtIcon value='chevron-right' size='14' color='#1d4ed8' />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </SwiperItem>
+          ))}
+        </Swiper>
 
         <View className='search-card'>
           <View className='scene-tabs'>
@@ -164,20 +195,25 @@ export default function QueryPage() {
               <Text className='position-title'>我的位置</Text>
               <Text className='position-value'>{locationName}</Text>
             </View>
-            <AtButton className='locate-btn' size='small' loading={isLocating} onClick={handleLocate}>
-              {isLocating ? '定位中' : '定位'}
-            </AtButton>
-          </View>
 
-          <View className='keyword-block'>
-            <AtSearchBar
-              value={keyword}
-              placeholder='位置/品牌/酒店'
-              onChange={(value) => setKeyword(value)}
-              showActionButton={false}
-              inputType='text'
-              className='search-bar'
-            />
+            <View className='search-action-area'>
+              <View className='inline-search'>
+                <AtIcon value='search' size='15' color='#94a3b8' />
+                <Input
+                  className='inline-search-input'
+                  value={keyword}
+                  placeholder='位置/品牌/酒店'
+                  placeholderClass='inline-search-placeholder'
+                  confirmType='search'
+                  onInput={handleKeywordInput}
+                  onConfirm={handleKeywordConfirm}
+                />
+              </View>
+
+              <View className={`locate-action-btn ${isLocating ? 'is-loading' : ''}`} onClick={handleLocate}>
+                <AtIcon value='map-pin' size='14' color='#2563eb' />
+              </View>
+            </View>
           </View>
 
           <View className='date-row'>
@@ -201,13 +237,42 @@ export default function QueryPage() {
             <Text className='capacity-text'>1间房 1成人 0儿童</Text>
             <View className='capacity-filter-btn' onClick={openFilterPage}>
               <Text className='capacity-filter'>价格/星级</Text>
-              <AtIcon value='chevron-right' size='12' color='#2563eb' />
+              <AtIcon value='chevron-right' size='12' color='#334155' />
             </View>
           </View>
 
-          <AtButton className='query-btn' type='primary' onClick={handleSearch}>
-            查 询
-          </AtButton>
+          <View className={`quick-tags-wrap ${showAllQuickTags ? 'is-expanded' : ''}`}>
+            <View className='quick-tags'>
+              {visibleQuickTags.map((tag) => (
+                <View key={tag} className='quick-tag-item'>
+                  <Text>{tag}</Text>
+                </View>
+              ))}
+
+              {showAllQuickTags && canExpandQuickTags ? (
+                <View
+                  className='quick-tag-toggle quick-tag-toggle-inline'
+                  onClick={() => setShowAllQuickTags((prev) => !prev)}
+                >
+                  <Text>收起</Text>
+                  <AtIcon value='chevron-up' size='11' color='#334155' />
+                </View>
+              ) : null}
+            </View>
+
+            {!showAllQuickTags && canExpandQuickTags ? (
+              <View className='quick-tag-toggle-mask' onClick={() => setShowAllQuickTags(true)}>
+                <View className='quick-tag-toggle'>
+                  <Text>更多</Text>
+                  <AtIcon value='chevron-down' size='11' color='#334155' />
+                </View>
+              </View>
+            ) : null}
+          </View>
+
+          <View className='query-btn' onClick={() => handleSearch()}>
+            <Text>查询</Text>
+          </View>
         </View>
 
         <View className='promo-grid'>
@@ -215,22 +280,6 @@ export default function QueryPage() {
             <View key={item.title} className={`promo-item ${item.color}`}>
               <Text className='promo-title'>{item.title}</Text>
               <Text className='promo-subtitle'>{item.subTitle}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View className='preview-list'>
-          {displayHotels.slice(0, 2).map((hotel) => (
-            <View key={hotel.id} className='hotel-card' onClick={() => openHotelDetail(hotel.id)}>
-              <Image className='hotel-cover' mode='aspectFill' src={hotel.coverImage} lazyLoad />
-              <View className='hotel-content'>
-                <Text className='hotel-name'>{hotel.name}</Text>
-                <Text className='hotel-intro'>{hotel.intro}</Text>
-                <View className='hotel-bottom'>
-                  <Text className='hotel-price'>¥{hotel.price} 起</Text>
-                  <Text className='hotel-link'>查看详情</Text>
-                </View>
-              </View>
             </View>
           ))}
         </View>

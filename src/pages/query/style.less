@@ -29,6 +29,28 @@
   background: #dbeafe;
 }
 
+.banner-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.banner-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e3a8a;
+  background: rgba(219, 234, 254, 0.92);
+  border: 1px solid rgba(191, 219, 254, 0.95);
+  box-shadow: 0 4px 10px rgba(30, 64, 175, 0.12);
+}
+
 .banner-title {
   display: block;
   margin-top: 10px;
@@ -63,16 +85,28 @@
   height: 50px;
   border-radius: 999px;
   background: #ffffff;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 6px;
   padding: 0 15px;
 }
 
 .banner-cta-text {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
   color: #1d4ed8;
   font-size: 20px;
   font-weight: 600;
+}
+
+.banner-cta .at-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transform: translateY(0.5px);
 }
 
 .search-card {
@@ -141,7 +175,7 @@
 .position-title {
   display: block;
   color: #0f172a;
-  font-size: 64px;
+  font-size: 21px;
   line-height: 1.1;
   font-weight: 700;
 }
@@ -149,8 +183,9 @@
 .position-value {
   margin-top: 6px;
   display: block;
-  color: #64748b;
-  font-size: 21px;
+  color: #000000;
+  font-size: 64px;
+  font-weight: 800;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -268,7 +303,7 @@
 }
 
 .capacity-filter {
-  color: #2563eb;
+  color: #334155;
   font-size: 22px;
   font-weight: 600;
 }
@@ -284,6 +319,67 @@
   gap: 2px;
 }
 
+.quick-tags-wrap {
+  margin-top: 16px;
+  position: relative;
+}
+
+.quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quick-tags-wrap:not(.is-expanded) .quick-tags {
+  max-height: 42px;
+  overflow: hidden;
+  padding-right: 110px;
+}
+
+.quick-tag-item {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid #d7e3ff;
+  background: #f8faff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.quick-tag-toggle {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px dashed #bfdbfe;
+  background: #eff6ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #334155;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.quick-tag-toggle-mask {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 42px;
+  padding-left: 34px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.72) 36%, #ffffff 64%);
+  display: flex;
+  align-items: center;
+}
+
+.quick-tag-toggle-inline {
+  background: #f4f8ff;
+}
+
 .query-btn {
   margin-top: 24px;
   height: 74px;
@@ -293,6 +389,9 @@
   background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
   font-size: 30px;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &,
   &.at-button {
@@ -314,7 +413,8 @@
 .promo-item {
   flex: 1;
   border-radius: 22px;
-  padding: 16px 14px;
+  min-height: 168px;
+  padding: 26px 14px;
   border: 1px solid #e2e8f0;
   background: #ffffff;
 
@@ -340,70 +440,9 @@
 
 .promo-subtitle {
   display: block;
-  margin-top: 6px;
+  margin-top: 10px;
   font-size: 20px;
   color: #f97316;
-}
-
-.preview-list {
-  margin-top: 20px;
-}
-
-.hotel-card {
-  border-radius: 30px;
-  background: #ffffff;
-  border: 1px solid #dbe5ff;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
-  overflow: hidden;
-  margin-bottom: 22px;
-}
-
-.hotel-cover {
-  width: 100%;
-  height: 286px;
-  background: #dbeafe;
-}
-
-.hotel-content {
-  min-height: 228px;
-  padding: 26px 22px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.hotel-name {
-  display: block;
-  font-size: 26px;
-  line-height: 1.4;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.hotel-intro {
-  display: block;
-  margin-top: 8px;
-  font-size: 22px;
-  color: #64748b;
-  line-height: 1.5;
-}
-
-.hotel-bottom {
-  margin-top: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.hotel-price {
-  font-size: 28px;
-  color: #f97316;
-  font-weight: 700;
-}
-
-.hotel-link {
-  font-size: 21px;
-  color: #2563eb;
 }
 
 .banner-card,
@@ -411,9 +450,324 @@
 .locate-btn,
 .query-btn,
 .promo-item,
-.hotel-card,
 .capacity-filter-btn,
 .banner-cta,
 .date-row picker {
   cursor: pointer;
+}
+
+.banner-swiper {
+  height: 428px;
+  margin-bottom: 18px;
+}
+
+.banner-card {
+  position: relative;
+  height: 100%;
+  border-radius: 34px;
+  padding: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+  background: none;
+}
+
+.banner-bg {
+  width: 100%;
+  height: 100%;
+}
+
+.banner-mask {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(29, 78, 216, 0.62) 0%, rgba(59, 130, 246, 0.38) 42%, rgba(2, 6, 23, 0.46) 100%);
+}
+
+.banner-content {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+}
+
+.banner-bottom {
+  margin-top: auto;
+}
+
+.banner-title {
+  max-width: 94%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.banner-desc {
+  max-width: 94%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.banner-swiper .swiper-pagination-bullet {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.banner-swiper .swiper-pagination-bullet-active {
+  background: #ffffff;
+}
+
+.base-row {
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.position-block {
+  flex: 0 0 42%;
+}
+
+.inline-search {
+  flex: 1;
+  min-width: 0;
+  height: 64px;
+  border: 1px solid #dbe5ff;
+  background: #f8faff;
+  border-radius: 20px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inline-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 64px;
+  font-size: 24px;
+  color: #0f172a;
+}
+
+.inline-search-placeholder {
+  color: #94a3b8;
+  font-size: 22px;
+}
+
+.locate-btn,
+.keyword-block,
+.query-btn-hidden {
+  display: none;
+}
+
+.inline-search {
+  cursor: text;
+}
+
+@media screen and (min-width: 768px) {
+  .query-page {
+    width: 92vw;
+    max-width: 960px;
+    margin: 0 auto;
+    box-shadow:
+      0 0 0 1px rgba(148, 163, 184, 0.16),
+      0 16px 42px rgba(15, 23, 42, 0.12);
+  }
+}
+
+@search-card-v-scale: 1.25;
+@search-card-text-scale: 1.5;
+@position-text-scale: (@search-card-text-scale / 1.25);
+
+.search-card {
+  padding: (28px * @search-card-v-scale) 24px (32px * @search-card-v-scale);
+}
+
+.scene-tabs {
+  padding: (8px * @search-card-v-scale) 8px;
+}
+
+.scene-tab {
+  height: (56px * @search-card-v-scale);
+}
+
+.location-tip {
+  margin-top: (18px * @search-card-v-scale);
+  height: (56px * @search-card-v-scale);
+}
+
+.base-row {
+  margin-top: (20px * @search-card-v-scale);
+}
+
+.inline-search {
+  height: (64px * @search-card-v-scale);
+}
+
+.inline-search-input {
+  height: (64px * @search-card-v-scale);
+}
+
+.date-row {
+  margin-top: (30px * @search-card-v-scale);
+  padding: (18px * @search-card-v-scale) 16px;
+}
+
+.date-item {
+  gap: (4px * @search-card-v-scale);
+}
+
+.capacity-row {
+  margin-top: (20px * @search-card-v-scale);
+  min-height: (64px * @search-card-v-scale);
+}
+
+.capacity-filter-btn {
+  height: (50px * @search-card-v-scale);
+}
+
+.quick-tags-wrap {
+  margin-top: (16px * @search-card-v-scale);
+}
+
+.quick-tags {
+  gap: (10px * @search-card-v-scale);
+}
+
+.quick-tags-wrap:not(.is-expanded) .quick-tags {
+  max-height: (42px * @search-card-v-scale);
+  padding-right: (110px * @search-card-v-scale);
+}
+
+.quick-tag-item {
+  min-height: (42px * @search-card-v-scale);
+  padding: 0 (16px * @search-card-v-scale);
+}
+
+.quick-tag-toggle {
+  min-height: (42px * @search-card-v-scale);
+  padding: 0 (16px * @search-card-v-scale);
+  gap: (4px * @search-card-v-scale);
+}
+
+.quick-tag-toggle-mask {
+  height: (42px * @search-card-v-scale);
+  padding-left: (34px * @search-card-v-scale);
+}
+
+.inline-search-input {
+  display: flex;
+  align-items: center;
+}
+
+.inline-search-input .weui-input__container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.inline-search-input .weui-input,
+.inline-search-input input {
+  height: 100%;
+  line-height: (64px * @search-card-v-scale);
+  padding: 0;
+  text-align: left;
+}
+
+.base-row {
+  gap: 8px;
+}
+
+.position-block {
+  flex: 0 0 36%;
+}
+
+.search-action-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateY(-12px);
+}
+
+.inline-search {
+  flex: 1;
+  min-width: 0;
+}
+
+.locate-action-btn {
+  flex: 0 0 (64px * @search-card-v-scale);
+  height: (64px * @search-card-v-scale);
+  border-radius: 20px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.locate-action-btn.is-loading {
+  opacity: 0.75;
+}
+
+.locate-action-btn {
+  cursor: pointer;
+}
+
+.scene-tab {
+  font-size: (24px * @search-card-text-scale);
+}
+
+.location-tip-text {
+  font-size: (20px * @search-card-text-scale);
+}
+
+.position-title {
+  font-size: (21px * @position-text-scale);
+}
+
+.position-value {
+  font-size: (64px * @position-text-scale);
+}
+
+.inline-search-input {
+  font-size: (24px * @search-card-text-scale);
+}
+
+.inline-search-placeholder {
+  font-size: (22px * @search-card-text-scale);
+}
+
+.date-title {
+  font-size: (32px * @search-card-text-scale);
+}
+
+.date-desc {
+  font-size: (19px * @search-card-text-scale);
+}
+
+.date-separator {
+  font-size: (26px * @search-card-text-scale);
+}
+
+.night-count {
+  font-size: (22px * @search-card-text-scale);
+}
+
+.capacity-text {
+  font-size: (30px * @search-card-text-scale);
+}
+
+.capacity-filter {
+  font-size: (22px * @search-card-text-scale);
+}
+
+.quick-tag-item {
+  font-size: (20px * @search-card-text-scale);
+}
+
+.quick-tag-toggle {
+  font-size: (20px * @search-card-text-scale);
 }
