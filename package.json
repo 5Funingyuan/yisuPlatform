@@ -2,7 +2,7 @@
   "name": "yisu-platform",
   "version": "0.1.0",
   "private": true,
-  "description": "易宿平台 monorepo（user / server / pc）",
+  "description": "易宿平台 monorepo（user / server）",
   "scripts": {
     "dev:user": "pnpm --filter @yisu/user dev:h5",
     "build:user": "pnpm --filter @yisu/user build:h5"
