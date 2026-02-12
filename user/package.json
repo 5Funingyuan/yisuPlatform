@@ -1,0 +1,35 @@
+{
+  "name": "@yisu/user",
+  "version": "0.1.0",
+  "private": true,
+  "description": "易宿平台移动端重构版（当前进度：酒店查询页静态）",
+  "scripts": {
+    "dev:h5": "taro build --type h5 --watch",
+    "build:h5": "taro build --type h5"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.26.0",
+    "@tarojs/components": "3.6.23",
+    "@tarojs/react": "3.6.23",
+    "@tarojs/runtime": "3.6.23",
+    "@tarojs/shared": "3.6.23",
+    "@tarojs/taro": "3.6.23",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/preset-env": "7.26.0",
+    "@babel/preset-react": "7.26.3",
+    "@babel/preset-typescript": "7.26.0",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.6.2",
+    "@tarojs/cli": "3.6.23",
+    "@tarojs/plugin-framework-react": "3.6.23",
+    "@tarojs/plugin-platform-h5": "3.6.23",
+    "@tarojs/webpack5-runner": "3.6.23",
+    "babel-preset-taro": "3.6.23",
+    "react-refresh": "^0.14.0",
+    "sass": "link:../vendors/sass",
+    "typescript": "^5.3.0"
+  }
+}
