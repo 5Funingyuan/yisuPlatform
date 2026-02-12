@@ -1,7 +1,21 @@
 import Taro from '@tarojs/taro'
 import { View, Text, ScrollView, Image, Swiper, SwiperItem, Input } from '@tarojs/components'
-import { AtIcon } from 'taro-ui'
 import { useMemo, useState } from 'react'
+import LiteIcon from '../../components/lite-icon'
+import {
+  addDays,
+  formatToYmd,
+  getStayNights,
+  getToday,
+  getSyncedDateRange,
+  isDateRangeValid,
+  normalizeDateRange,
+  parseYmd,
+  syncDateRangeState,
+  isValidYmd,
+} from '../../shared/date'
+import { buildQueryString } from '../../shared/route'
+import { buildDetailUrl } from '../../shared/search-context'
 import { hotelCards } from './mock'
 import './style.less'
 
@@ -12,6 +26,7 @@ const PRICE_OPTIONS = ['不限', '¥0-200', '¥200-400', '¥400-700', '¥700+'] 
 const FEATURE_TAGS = ['亲子', '豪华', '免费停车场', '含早餐', '免费取消', '近地铁', '可开发票', '健身房'] as const
 const WEEK_DAYS = ['日', '一', '二', '三', '四', '五', '六'] as const
 const CALENDAR_MONTH_COUNT = 2
+const LOCATION_SCOPE = 'scope.userLocation'
 
 const PROMO_BLOCKS = [
   { title: '口碑榜', subTitle: '城市精选', color: 'orange' },
@@ -33,32 +48,11 @@ interface CalendarMonth {
   cells: CalendarCell[]
 }
 
-const formatToYmd = (date: Date) => {
-  const year = date.getFullYear()
-  const month = `${date.getMonth() + 1}`.padStart(2, '0')
-  const day = `${date.getDate()}`.padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-const parseYmd = (dateValue: string) => {
-  const [year, month, day] = dateValue.split('-').map(Number)
-  return new Date(year, month - 1, day, 12)
-}
-
-const addDays = (dateValue: string, days: number) => {
-  const date = parseYmd(dateValue)
-  date.setDate(date.getDate() + days)
-  return formatToYmd(date)
-}
-
-const getToday = () => formatToYmd(new Date())
-
-const getStayNights = (checkInDate: string, checkOutDate: string) => {
-  const diff = Math.floor((parseYmd(checkOutDate).getTime() - parseYmd(checkInDate).getTime()) / (24 * 60 * 60 * 1000))
-  return Math.max(1, diff)
-}
-
 const formatDate = (dateText: string) => {
+  if (!isValidYmd(dateText)) {
+    return '--月--日'
+  }
+
   const [, month, day] = dateText.split('-')
   return `${month}月${day}日`
 }
@@ -112,6 +106,11 @@ const createCalendarMonth = (monthStartDate: Date, minDate: string): CalendarMon
 
 const getCalendarMonths = (startDate: string, monthCount: number) => {
   const baseDate = parseYmd(startDate)
+
+  if (!baseDate) {
+    return []
+  }
+
   return Array.from({ length: monthCount }, (_, index) => {
     const monthStartDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + index, 1, 12)
     return createCalendarMonth(monthStartDate, startDate)
@@ -119,11 +118,12 @@ const getCalendarMonths = (startDate: string, monthCount: number) => {
 }
 
 export default function QueryPage() {
-  const today = useMemo(() => getToday(), [])
+  const [today, setToday] = useState(() => getToday())
   const [activeScene, setActiveScene] = useState<(typeof SCENE_TABS)[number]>('国内')
   const [keyword, setKeyword] = useState('深圳会展中心')
   const [locationName, setLocationName] = useState('上海')
   const [isLocating, setIsLocating] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
   const [selectedStar, setSelectedStar] = useState<(typeof STAR_OPTIONS)[number]>('不限')
   const [selectedPrice, setSelectedPrice] = useState<(typeof PRICE_OPTIONS)[number]>('不限')
   const [selectedTags, setSelectedTags] = useState<string[]>(['亲子', '免费停车场'])
@@ -141,6 +141,12 @@ export default function QueryPage() {
   const stayNights = getStayNights(checkInDate, checkOutDate)
   const tempStayNights = getStayNights(calendarCheckInDate, calendarCheckOutDate)
 
+  const syncDateRangeWithToday = () =>
+    syncDateRangeState(
+      { today, checkInDate, checkOutDate },
+      { setToday, setCheckInDate, setCheckOutDate },
+    )
+
   const handleLocate = async () => {
     if (isLocating) {
       return
@@ -148,6 +154,27 @@ export default function QueryPage() {
 
     setIsLocating(true)
     try {
+      const settingResult = await Taro.getSetting()
+      const locationPermission = settingResult.authSetting?.[LOCATION_SCOPE]
+
+      if (locationPermission === false) {
+        const modalResult = await Taro.showModal({
+          title: '定位权限未开启',
+          content: '请在设置中开启定位权限后重试',
+          confirmText: '去设置',
+        })
+
+        if (modalResult.confirm) {
+          await Taro.openSetting()
+        }
+
+        return
+      }
+
+      if (locationPermission !== true) {
+        await Taro.authorize({ scope: LOCATION_SCOPE })
+      }
+
       const location = await Taro.getLocation({ type: 'gcj02' })
       const latitude = Number(location.latitude).toFixed(4)
       const longitude = Number(location.longitude).toFixed(4)
@@ -160,13 +187,30 @@ export default function QueryPage() {
     }
   }
 
-  const openHotelDetail = (hotelId: string) => {
-    Taro.navigateTo({ url: `/pages/detail/index?id=${hotelId}` })
+  const openHotelDetail = async (hotelId: string) => {
+    if (!hotelId) {
+      return
+    }
+
+    const normalizedRange = syncDateRangeWithToday()
+    const detailUrl = buildDetailUrl({
+      id: hotelId,
+      checkIn: normalizedRange.checkInDate,
+      checkOut: normalizedRange.checkOutDate,
+      source: 'query',
+    })
+
+    try {
+      await Taro.navigateTo({ url: detailUrl })
+    } catch {
+      Taro.showToast({ title: '页面打开失败，请稍后重试', icon: 'none' })
+    }
   }
 
   const openCalendar = () => {
-    setCalendarCheckInDate(checkInDate)
-    setCalendarCheckOutDate(checkOutDate)
+    const normalizedRange = syncDateRangeWithToday()
+    setCalendarCheckInDate(normalizedRange.checkInDate)
+    setCalendarCheckOutDate(normalizedRange.checkOutDate)
     setCalendarStep('checkIn')
     setShowCalendar(true)
   }
@@ -176,8 +220,10 @@ export default function QueryPage() {
   }
 
   const resetCalendar = () => {
-    setCalendarCheckInDate(today)
-    setCalendarCheckOutDate(addDays(today, 1))
+    const latestToday = getSyncedDateRange(checkInDate, checkOutDate).today
+
+    setCalendarCheckInDate(latestToday)
+    setCalendarCheckOutDate(addDays(latestToday, 1))
     setCalendarStep('checkIn')
   }
 
@@ -198,7 +244,6 @@ export default function QueryPage() {
     }
 
     if (cell.dateValue <= calendarCheckInDate) {
-      Taro.showToast({ title: '离店日期需晚于入住日期', icon: 'none' })
       return
     }
 
@@ -206,6 +251,11 @@ export default function QueryPage() {
   }
 
   const confirmCalendar = () => {
+    if (!isDateRangeValid(calendarCheckInDate, calendarCheckOutDate)) {
+      Taro.showToast({ title: '日期选择有误，请重新选择', icon: 'none' })
+      return
+    }
+
     setCheckInDate(calendarCheckInDate)
     setCheckOutDate(calendarCheckOutDate)
     setShowCalendar(false)
@@ -220,22 +270,41 @@ export default function QueryPage() {
     })
   }
 
-  const handleSearch = (nextKeyword = keyword) => {
-    const normalizedKeyword = nextKeyword.trim() || '不限'
-    const queryString = [
-      `scene=${encodeURIComponent(activeScene)}`,
-      `keyword=${encodeURIComponent(normalizedKeyword)}`,
-      `location=${encodeURIComponent(locationName)}`,
-      `checkIn=${encodeURIComponent(checkInDate)}`,
-      `checkOut=${encodeURIComponent(checkOutDate)}`,
-      `star=${encodeURIComponent(selectedStar)}`,
-      `price=${encodeURIComponent(selectedPrice)}`,
-      `tags=${encodeURIComponent(selectedTags.join(','))}`,
-    ].join('&')
+  const handleSearch = async (nextKeyword = keyword) => {
+    if (isSearching) {
+      return
+    }
 
-    Taro.navigateTo({
-      url: `/pages/list/index?${queryString}`,
+    const normalizedRange = syncDateRangeWithToday()
+
+    if (!isDateRangeValid(normalizedRange.checkInDate, normalizedRange.checkOutDate)) {
+      Taro.showToast({ title: '日期选择有误，请重新选择', icon: 'none' })
+      return
+    }
+
+    const normalizedKeyword = nextKeyword.trim() || '不限'
+    const normalizedLocation = locationName.trim() || '全国'
+    const queryString = buildQueryString({
+      scene: activeScene,
+      keyword: normalizedKeyword,
+      location: normalizedLocation,
+      checkIn: normalizedRange.checkInDate,
+      checkOut: normalizedRange.checkOutDate,
+      star: selectedStar,
+      price: selectedPrice,
+      tags: selectedTags.join(','),
     })
+
+    setIsSearching(true)
+    try {
+      await Taro.navigateTo({
+        url: `/pages/list/index?${queryString}`,
+      })
+    } catch {
+      Taro.showToast({ title: '查询失败，请稍后重试', icon: 'none' })
+    } finally {
+      setIsSearching(false)
+    }
   }
 
   const handleKeywordInput = (event: { detail: { value: string } }) => {
@@ -245,7 +314,7 @@ export default function QueryPage() {
   const handleKeywordConfirm = (event?: { detail: { value: string } }) => {
     const nextKeyword = event?.detail?.value ?? keyword
     setKeyword(nextKeyword)
-    handleSearch(nextKeyword)
+    void handleSearch(nextKeyword)
   }
 
   const renderCalendarDay = (cell: CalendarCell) => {
@@ -253,12 +322,14 @@ export default function QueryPage() {
       return <View key={cell.key} className='calendar-day is-placeholder' />
     }
 
+    const isStepDisabled = calendarStep === 'checkOut' && cell.dateValue <= calendarCheckInDate
+    const isDisabled = cell.isDisabled || isStepDisabled
     const isStart = cell.dateValue === calendarCheckInDate
     const isEnd = cell.dateValue === calendarCheckOutDate
     const isInRange = cell.dateValue >= calendarCheckInDate && cell.dateValue <= calendarCheckOutDate
     const dayClassName = [
       'calendar-day',
-      cell.isDisabled ? 'is-disabled' : '',
+      isDisabled ? 'is-disabled' : '',
       isInRange ? 'is-range' : '',
       isStart ? 'is-start' : '',
       isEnd ? 'is-end' : '',
@@ -267,7 +338,17 @@ export default function QueryPage() {
       .join(' ')
 
     return (
-      <View key={cell.key} className={dayClassName} onClick={() => handleCalendarDayClick(cell)}>
+      <View
+        key={cell.key}
+        className={dayClassName}
+        onClick={() => {
+          if (isDisabled) {
+            return
+          }
+
+          handleCalendarDayClick(cell)
+        }}
+      >
         <Text className='calendar-day-text'>{cell.day}</Text>
         {isStart || isEnd ? <Text className='calendar-day-tip'>{isStart ? '住' : '离'}</Text> : null}
       </View>
@@ -289,7 +370,7 @@ export default function QueryPage() {
         >
           {bannerHotels.map((hotel) => (
             <SwiperItem key={hotel.id}>
-              <View className='banner-card' onClick={() => openHotelDetail(hotel.id)}>
+              <View className='banner-card' onClick={() => void openHotelDetail(hotel.id)}>
                 <Image className='banner-bg' mode='aspectFill' src={hotel.coverImage} lazyLoad />
                 <View className='banner-mask' />
 
@@ -307,7 +388,7 @@ export default function QueryPage() {
                     <Text className='banner-price'>¥{hotel.price} 起/晚</Text>
                     <View className='banner-cta'>
                       <Text className='banner-cta-text'>立即查看</Text>
-                      <AtIcon value='chevron-right' size='14' color='#1d4ed8' />
+                      <LiteIcon value='chevron-right' size='14' color='#1d4ed8' />
                     </View>
                   </View>
                 </View>
@@ -332,7 +413,7 @@ export default function QueryPage() {
           <View className='field-card'>
             <View className='field-header'>
               <View className='field-title-wrap'>
-                <AtIcon value='map-pin' size='14' color='#2563eb' />
+                <LiteIcon value='map-pin' size='14' color='#2563eb' />
                 <Text className='field-title'>当前地点</Text>
               </View>
               <View className={`location-btn ${isLocating ? 'is-loading' : ''}`} onClick={handleLocate}>
@@ -345,12 +426,12 @@ export default function QueryPage() {
           <View className='field-card'>
             <View className='field-header'>
               <View className='field-title-wrap'>
-                <AtIcon value='search' size='14' color='#2563eb' />
+                <LiteIcon value='search' size='14' color='#2563eb' />
                 <Text className='field-title'>关键词搜索</Text>
               </View>
             </View>
             <View className='keyword-input-wrap'>
-              <AtIcon value='search' size='14' color='#94a3b8' />
+              <LiteIcon value='search' size='14' color='#94a3b8' />
               <Input
                 className='keyword-input'
                 value={keyword}
@@ -366,7 +447,7 @@ export default function QueryPage() {
           <View className='field-card' onClick={openCalendar}>
             <View className='field-header'>
               <View className='field-title-wrap'>
-                <AtIcon value='calendar' size='14' color='#2563eb' />
+                <LiteIcon value='calendar' size='14' color='#2563eb' />
                 <Text className='field-title'>入住日期</Text>
               </View>
               <Text className='field-tip'>共 {stayNights} 晚</Text>
@@ -393,7 +474,7 @@ export default function QueryPage() {
           <View className='field-card'>
             <View className='field-header'>
               <View className='field-title-wrap'>
-                <AtIcon value='filter' size='14' color='#2563eb' />
+                <LiteIcon value='filter' size='14' color='#2563eb' />
                 <Text className='field-title'>筛选条件</Text>
               </View>
               <Text className='field-tip'>支持多维组合筛选</Text>
@@ -429,7 +510,7 @@ export default function QueryPage() {
           <View className='field-card'>
             <View className='field-header'>
               <View className='field-title-wrap'>
-                <AtIcon value='check-circle' size='14' color='#2563eb' />
+                <LiteIcon value='check-circle' size='14' color='#2563eb' />
                 <Text className='field-title'>快捷标签</Text>
               </View>
               <Text className='field-tip'>可多选</Text>
@@ -444,9 +525,9 @@ export default function QueryPage() {
             </View>
           </View>
 
-          <View className='query-btn' onClick={() => handleSearch()}>
-            <Text>查询酒店</Text>
-            <AtIcon value='chevron-right' size='14' color='#ffffff' />
+          <View className={`query-btn ${isSearching ? 'is-loading' : ''}`} onClick={() => void handleSearch()}>
+            <Text>{isSearching ? '查询中...' : '查询酒店'}</Text>
+            <LiteIcon value='chevron-right' size='14' color='#ffffff' />
           </View>
         </View>
 
@@ -476,7 +557,7 @@ export default function QueryPage() {
                 </Text>
               </View>
               <View className='calendar-close' onClick={closeCalendar}>
-                <AtIcon value='close' size='12' color='#64748b' />
+                <LiteIcon value='close' size='12' color='#64748b' />
               </View>
             </View>
 

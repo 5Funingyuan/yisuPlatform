@@ -14,7 +14,6 @@
     "@tarojs/runtime": "3.6.23",
     "@tarojs/shared": "3.6.23",
     "@tarojs/taro": "3.6.23",
-    "taro-ui": "link:../vendors/taro-ui",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
