@@ -118,7 +118,7 @@ const buildHotelListItem = (baseHotel: HotelCard, itemIndex: number): HotelListI
   }
 }
 
-export const HOTEL_LIST_POOL: HotelListItem[] = Array.from({ length: 60 }, (_, index) => {
+export const HOTEL_LIST_POOL: HotelListItem[] = Array.from({ length: 120 }, (_, index) => {
   const baseHotel = hotelCards[index % hotelCards.length]
   return buildHotelListItem(baseHotel, index)
 })

@@ -202,13 +202,14 @@ export default function HotelListPage() {
 
   useEffect(() => {
     const today = getToday()
+    const routeSource = decodeParam(routeParams.source, '')
     const initialScene = normalizeOption(decodeParam(routeParams.scene, draftScene), SCENE_OPTIONS, SCENE_OPTIONS[0])
     const locationFromRoute = decodeParam(routeParams.location, draftLocationName || CITY_OPTIONS[0])
     const initialCity = normalizeCityTitle(
       locationFromRoute && !locationFromRoute.startsWith('已定位') ? locationFromRoute : draftLocationName || CITY_OPTIONS[0],
     )
     const keywordFromRoute = decodeParam(routeParams.keyword, draftKeyword || '')
-    const initialKeyword = keywordFromRoute === '-' ? '' : keywordFromRoute
+    const initialKeyword = keywordFromRoute === '-' || keywordFromRoute === '不限' ? '' : keywordFromRoute
     const initialCheckInInput = normalizeYmd(decodeParam(routeParams.checkIn, draftCheckInDate || today), today)
     const checkOutFallback = draftCheckOutDate || addDays(initialCheckInInput, 1)
     const initialCheckOutInput = normalizeYmd(
@@ -217,7 +218,7 @@ export default function HotelListPage() {
     )
     const initialDateRange = normalizeDateRange(initialCheckInInput, initialCheckOutInput, today)
     const routeTags = parseSelectedTags(decodeParam(routeParams.tags, ''))
-    const initialTags = routeTags.length > 0 ? routeTags : draftTags
+    const initialTags = routeTags.length > 0 ? routeTags : routeSource === 'query-home' ? [] : draftTags
     const roomProfile = ROOM_PROFILES[(initialCity.length + initialKeyword.length) % ROOM_PROFILES.length]
     const roomSummary = `${roomProfile.rooms}间房 · ${roomProfile.adults}成人${
       roomProfile.children > 0 ? ` ${roomProfile.children}儿童` : ''

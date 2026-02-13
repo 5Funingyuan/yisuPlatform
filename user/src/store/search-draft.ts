@@ -12,7 +12,7 @@ import {
   type StarOption,
 } from '../shared/search-options'
 
-const STORAGE_KEY = 'yisu-user-search-draft-v1'
+const STORAGE_KEY = 'yisu-user-search-draft-v2'
 
 const normalizeOption = <T extends readonly string[]>(value: string | undefined, options: T, fallback: T[number]) => {
   if (value && options.includes(value as T[number])) {
@@ -28,11 +28,11 @@ const createDefaultDraft = () => {
 
   return {
     scene: SCENE_OPTIONS[0] as SceneOption,
-    keyword: '深圳会展中心',
+    keyword: '',
     locationName: '上海',
     selectedStar: STAR_OPTIONS[0] as StarOption,
     selectedPrice: PRICE_OPTIONS[0] as PriceOption,
-    selectedTags: ['亲子', '免费停车场'],
+    selectedTags: [],
     checkInDate: normalizedRange.checkInDate,
     checkOutDate: normalizedRange.checkOutDate,
     updatedAt: Date.now(),

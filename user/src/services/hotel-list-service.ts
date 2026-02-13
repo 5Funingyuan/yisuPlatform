@@ -160,7 +160,8 @@ const isCityMatched = (hotel: HotelListItem, city: string) => {
 }
 
 export const fetchHotelListPage = async (query: HotelListQuery): Promise<HotelListPageResult> => {
-  const normalizedKeyword = query.keyword.trim().toLowerCase()
+  const rawKeyword = query.keyword.trim()
+  const normalizedKeyword = rawKeyword === '不限' ? '' : rawKeyword.toLowerCase()
 
   if (normalizedKeyword.includes('error') || normalizedKeyword.includes('错误')) {
     await sleep(420)
