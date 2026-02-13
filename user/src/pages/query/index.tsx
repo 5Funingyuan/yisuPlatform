@@ -162,7 +162,7 @@ export default function QueryPage() {
     const queryString = buildQueryString({
       source: 'query-home',
       scene: activeScene,
-      keyword: keyword.trim() || '不限',
+      keyword: keyword.trim() || undefined,
       location: cityValue,
       checkIn: normalizedRange.checkInDate,
       checkOut: normalizedRange.checkOutDate,
