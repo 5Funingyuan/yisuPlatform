@@ -1,15 +1,66 @@
 .filter-page {
   min-height: 100vh;
-  background: #ffffff;
+  background: #f3f5f7;
+  padding: 16px;
 }
 
-@media screen and (min-width: 768px) {
-  .filter-page {
-    width: 92vw;
-    max-width: 960px;
-    margin: 0 auto;
-    box-shadow:
-      0 0 0 1px rgba(148, 163, 184, 0.16),
-      0 16px 42px rgba(15, 23, 42, 0.12);
+.filter-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.filter-title {
+  display: block;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.filter-desc {
+  display: block;
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.filter-info-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.filter-info-label {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.filter-info-value {
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.filter-back-btn {
+  margin-top: 16px;
+  height: 38px;
+  border-radius: 10px;
+  background: #1677ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
   }
 }
