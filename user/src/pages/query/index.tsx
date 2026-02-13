@@ -1,7 +1,9 @@
 import Taro from '@tarojs/taro'
 import { View, Text, ScrollView, Image, Swiper, SwiperItem, Input } from '@tarojs/components'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import LiteIcon from '../../components/lite-icon'
+import AdaptivePrimaryButton from '../../components/adaptive/primary-button'
+import AdaptiveSegmented from '../../components/adaptive/segmented'
 import {
   addDays,
   formatToYmd,
@@ -16,14 +18,11 @@ import {
 } from '../../shared/date'
 import { buildQueryString } from '../../shared/route'
 import { buildDetailUrl } from '../../shared/search-context'
+import { FILTER_TAG_OPTIONS, PRICE_OPTIONS, SCENE_OPTIONS, STAR_OPTIONS } from '../../shared/search-options'
+import { useSearchDraftStore } from '../../store/search-draft'
 import { hotelCards } from './mock'
-import './style.less'
+import './style.scss'
 
-const SCENE_TABS = ['国内', '海外', '钟点房', '民宿'] as const
-
-const STAR_OPTIONS = ['不限', '经济型', '舒适型', '高档型', '豪华型'] as const
-const PRICE_OPTIONS = ['不限', '¥0-200', '¥200-400', '¥400-700', '¥700+'] as const
-const FEATURE_TAGS = ['亲子', '豪华', '免费停车场', '含早餐', '免费取消', '近地铁', '可开发票', '健身房'] as const
 const WEEK_DAYS = ['日', '一', '二', '三', '四', '五', '六'] as const
 const CALENDAR_MONTH_COUNT = 2
 const LOCATION_SCOPE = 'scope.userLocation'
@@ -118,28 +117,55 @@ const getCalendarMonths = (startDate: string, monthCount: number) => {
 }
 
 export default function QueryPage() {
+  const persistedScene = useSearchDraftStore((state) => state.scene)
+  const persistedKeyword = useSearchDraftStore((state) => state.keyword)
+  const persistedLocationName = useSearchDraftStore((state) => state.locationName)
+  const persistedStar = useSearchDraftStore((state) => state.selectedStar)
+  const persistedPrice = useSearchDraftStore((state) => state.selectedPrice)
+  const persistedTags = useSearchDraftStore((state) => state.selectedTags)
+  const persistedCheckInDate = useSearchDraftStore((state) => state.checkInDate)
+  const persistedCheckOutDate = useSearchDraftStore((state) => state.checkOutDate)
+  const patchSearchDraft = useSearchDraftStore((state) => state.patchDraft)
+  const syncSearchDateRange = useSearchDraftStore((state) => state.syncDateRange)
+
   const [today, setToday] = useState(() => getToday())
-  const [activeScene, setActiveScene] = useState<(typeof SCENE_TABS)[number]>('国内')
-  const [keyword, setKeyword] = useState('深圳会展中心')
-  const [locationName, setLocationName] = useState('上海')
+  const [activeScene, setActiveScene] = useState<(typeof SCENE_OPTIONS)[number]>(persistedScene)
+  const [keyword, setKeyword] = useState(persistedKeyword)
+  const [locationName, setLocationName] = useState(persistedLocationName)
   const [isLocating, setIsLocating] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
-  const [selectedStar, setSelectedStar] = useState<(typeof STAR_OPTIONS)[number]>('不限')
-  const [selectedPrice, setSelectedPrice] = useState<(typeof PRICE_OPTIONS)[number]>('不限')
-  const [selectedTags, setSelectedTags] = useState<string[]>(['亲子', '免费停车场'])
-
-  const [checkInDate, setCheckInDate] = useState(today)
-  const [checkOutDate, setCheckOutDate] = useState(addDays(today, 1))
+  const [selectedStar, setSelectedStar] = useState<(typeof STAR_OPTIONS)[number]>(persistedStar)
+  const [selectedPrice, setSelectedPrice] = useState<(typeof PRICE_OPTIONS)[number]>(persistedPrice)
+  const [selectedTags, setSelectedTags] = useState<string[]>(persistedTags)
+  const [checkInDate, setCheckInDate] = useState(persistedCheckInDate)
+  const [checkOutDate, setCheckOutDate] = useState(persistedCheckOutDate)
   const [showCalendar, setShowCalendar] = useState(false)
   const [calendarStep, setCalendarStep] = useState<'checkIn' | 'checkOut'>('checkIn')
-  const [calendarCheckInDate, setCalendarCheckInDate] = useState(today)
-  const [calendarCheckOutDate, setCalendarCheckOutDate] = useState(addDays(today, 1))
+  const [calendarCheckInDate, setCalendarCheckInDate] = useState(persistedCheckInDate)
+  const [calendarCheckOutDate, setCalendarCheckOutDate] = useState(persistedCheckOutDate)
 
   const bannerHotels = hotelCards.slice(0, 3)
   const calendarMonths = useMemo(() => getCalendarMonths(today, CALENDAR_MONTH_COUNT), [today])
 
   const stayNights = getStayNights(checkInDate, checkOutDate)
   const tempStayNights = getStayNights(calendarCheckInDate, calendarCheckOutDate)
+
+  useEffect(() => {
+    syncSearchDateRange()
+  }, [syncSearchDateRange])
+
+  useEffect(() => {
+    patchSearchDraft({
+      scene: activeScene,
+      keyword,
+      locationName,
+      selectedStar,
+      selectedPrice,
+      selectedTags,
+      checkInDate,
+      checkOutDate,
+    })
+  }, [activeScene, checkInDate, checkOutDate, keyword, locationName, patchSearchDraft, selectedPrice, selectedStar, selectedTags])
 
   const syncDateRangeWithToday = () =>
     syncDateRangeState(
@@ -399,15 +425,11 @@ export default function QueryPage() {
 
         <View className='search-card'>
           <View className='scene-tabs'>
-            {SCENE_TABS.map((tab) => (
-              <View
-                key={tab}
-                className={`scene-tab ${activeScene === tab ? 'active' : ''}`}
-                onClick={() => setActiveScene(tab)}
-              >
-                <Text>{tab}</Text>
-              </View>
-            ))}
+            <AdaptiveSegmented
+              options={SCENE_OPTIONS}
+              value={activeScene}
+              onChange={(nextValue) => setActiveScene(nextValue as (typeof SCENE_OPTIONS)[number])}
+            />
           </View>
 
           <View className='field-card'>
@@ -517,7 +539,7 @@ export default function QueryPage() {
             </View>
 
             <View className='chip-row'>
-              {FEATURE_TAGS.map((tag) => (
+              {FILTER_TAG_OPTIONS.map((tag) => (
                 <View key={tag} className={`tag-chip ${selectedTags.includes(tag) ? 'active' : ''}`} onClick={() => toggleTag(tag)}>
                   <Text>{tag}</Text>
                 </View>
@@ -525,10 +547,7 @@ export default function QueryPage() {
             </View>
           </View>
 
-          <View className={`query-btn ${isSearching ? 'is-loading' : ''}`} onClick={() => void handleSearch()}>
-            <Text>{isSearching ? '查询中...' : '查询酒店'}</Text>
-            <LiteIcon value='chevron-right' size='14' color='#ffffff' />
-          </View>
+          <AdaptivePrimaryButton loading={isSearching} text={isSearching ? '查询中...' : '查询酒店'} onClick={() => void handleSearch()} />
         </View>
 
         <View className='promo-grid'>

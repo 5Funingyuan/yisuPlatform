@@ -1,6 +1,6 @@
 import { View, Text, Image, Swiper, SwiperItem, Picker, ScrollView } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import LiteIcon from '../../components/lite-icon'
 import {
   addDays,
@@ -19,8 +19,9 @@ import {
   buildListUrl,
   pickSearchContextFromParams,
 } from '../../shared/search-context'
+import { useSearchDraftStore } from '../../store/search-draft'
 import { getHotelDetailById } from './mock'
-import './style.less'
+import './style.scss'
 
 const WEEK_DAYS = ['日', '一', '二', '三', '四', '五', '六'] as const
 
@@ -53,6 +54,7 @@ export default function HotelDetailPage() {
   const [checkOutDate, setCheckOutDate] = useState(initialDateRange.checkOutDate)
   const [bannerIndex, setBannerIndex] = useState(0)
   const [isRouting, setIsRouting] = useState(false)
+  const patchSearchDraft = useSearchDraftStore((state) => state.patchDraft)
 
   const sortedRoomRatePlans = useMemo(() => {
     return hotel.roomRatePlans
@@ -67,6 +69,13 @@ export default function HotelDetailPage() {
   )
 
   const stayNights = getStayNights(checkInDate, checkOutDate)
+
+  useEffect(() => {
+    patchSearchDraft({
+      checkInDate,
+      checkOutDate,
+    })
+  }, [checkInDate, checkOutDate, patchSearchDraft])
 
   const syncDateRangeWithToday = () =>
     syncDateRangeState(

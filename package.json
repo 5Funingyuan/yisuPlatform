@@ -5,6 +5,8 @@
   "description": "易宿平台 monorepo（user / server）",
   "scripts": {
     "dev:user": "pnpm --filter @yisu/user dev:h5",
-    "build:user": "pnpm --filter @yisu/user build:h5"
+    "build:user": "pnpm --filter @yisu/user build:h5",
+    "dev:user:weapp": "pnpm --filter @yisu/user dev:weapp",
+    "build:user:weapp": "pnpm --filter @yisu/user build:weapp"
   }
 }

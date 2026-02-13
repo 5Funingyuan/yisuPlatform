@@ -1,6 +1,7 @@
-import './app.less'
+import type { PropsWithChildren } from 'react'
+import './app.scss'
 
-function App(props) {
+function App(props: PropsWithChildren) {
   return props.children
 }
 
