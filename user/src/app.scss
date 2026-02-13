@@ -20,3 +20,7 @@ page {
   background: var(--ys-color-bg);
   color: var(--ys-color-text);
 }
+
+.safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
+}

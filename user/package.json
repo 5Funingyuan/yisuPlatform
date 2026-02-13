@@ -32,7 +32,9 @@
     "@tarojs/plugin-platform-h5": "4.1.11",
     "@tarojs/plugin-platform-weapp": "4.1.11",
     "@tarojs/webpack5-runner": "4.1.11",
+    "autoprefixer": "^10.4.20",
     "babel-preset-taro": "4.1.11",
+    "postcss": "^8.4.49",
     "react-refresh": "^0.14.0",
     "sass": "^1.83.4",
     "typescript": "^5.3.0"
