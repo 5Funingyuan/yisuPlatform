@@ -31,6 +31,10 @@ const config = {
         enable: true,
         config: {},
       },
+      autoprefixer: {
+        enable: true,
+        config: {},
+      },
     },
   },
   h5: {

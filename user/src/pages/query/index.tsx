@@ -1,120 +1,51 @@
+import { ScrollView, Text, View } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { View, Text, ScrollView, Image, Swiper, SwiperItem, Input } from '@tarojs/components'
 import { useEffect, useMemo, useState } from 'react'
-import LiteIcon from '../../components/lite-icon'
-import AdaptivePrimaryButton from '../../components/adaptive/primary-button'
-import AdaptiveSegmented from '../../components/adaptive/segmented'
-import {
-  addDays,
-  formatToYmd,
-  getStayNights,
-  getToday,
-  getSyncedDateRange,
-  isDateRangeValid,
-  normalizeDateRange,
-  parseYmd,
-  syncDateRangeState,
-  isValidYmd,
-} from '../../shared/date'
+import { addDays, getStayNights, getToday, isDateRangeValid, normalizeDateRange, parseYmd } from '../../shared/date'
 import { buildQueryString } from '../../shared/route'
 import { buildDetailUrl } from '../../shared/search-context'
-import { FILTER_TAG_OPTIONS, PRICE_OPTIONS, SCENE_OPTIONS, STAR_OPTIONS } from '../../shared/search-options'
+import { SCENE_OPTIONS } from '../../shared/search-options'
 import { useSearchDraftStore } from '../../store/search-draft'
-import { hotelCards } from './mock'
+import {
+  BOTTOM_NAV_ITEMS,
+  CITY_OPTIONS,
+  COUPON_CONTENT,
+  HOT_DESTINATION_TAGS,
+  MARKETING_BANNERS,
+  QUICK_ENTRIES,
+  ROOM_PROFILES,
+} from './entry-mock'
+import BannerCarousel from './components/banner-carousel'
+import BottomNav from './components/bottom-nav'
+import OperationPanel from './components/operation-panel'
+import SearchFormCard, { type SearchFieldKey } from './components/search-form-card'
 import './style.scss'
 
 const WEEK_DAYS = ['日', '一', '二', '三', '四', '五', '六'] as const
-const CALENDAR_MONTH_COUNT = 2
-const LOCATION_SCOPE = 'scope.userLocation'
 
-const PROMO_BLOCKS = [
-  { title: '口碑榜', subTitle: '城市精选', color: 'orange' },
-  { title: '附近热卖', subTitle: '2公里内', color: 'red' },
-  { title: '超值低价', subTitle: '7折起', color: 'blue' },
-] as const
+const formatDateLabel = (dateValue: string, todayValue: string) => {
+  const parsedDate = parseYmd(dateValue)
 
-interface CalendarCell {
-  key: string
-  dateValue: string
-  day: number
-  isPlaceholder: boolean
-  isDisabled: boolean
+  if (!parsedDate) {
+    return '-- --/--'
+  }
+
+  const month = `${parsedDate.getMonth() + 1}`.padStart(2, '0')
+  const day = `${parsedDate.getDate()}`.padStart(2, '0')
+  const weekText = `周${WEEK_DAYS[parsedDate.getDay()]}`
+
+  if (dateValue === todayValue) {
+    return `今 ${month}/${day}`
+  }
+
+  if (dateValue === addDays(todayValue, 1)) {
+    return `明 ${month}/${day}`
+  }
+
+  return `${weekText} ${month}/${day}`
 }
 
-interface CalendarMonth {
-  key: string
-  title: string
-  cells: CalendarCell[]
-}
-
-const formatDate = (dateText: string) => {
-  if (!isValidYmd(dateText)) {
-    return '--月--日'
-  }
-
-  const [, month, day] = dateText.split('-')
-  return `${month}月${day}日`
-}
-
-const createCalendarMonth = (monthStartDate: Date, minDate: string): CalendarMonth => {
-  const year = monthStartDate.getFullYear()
-  const month = monthStartDate.getMonth()
-  const firstDay = new Date(year, month, 1, 12)
-  const dayCount = new Date(year, month + 1, 0, 12).getDate()
-
-  const cells: CalendarCell[] = []
-
-  for (let index = 0; index < firstDay.getDay(); index += 1) {
-    cells.push({
-      key: `empty-${year}-${month + 1}-${index}`,
-      dateValue: '',
-      day: 0,
-      isPlaceholder: true,
-      isDisabled: true,
-    })
-  }
-
-  for (let day = 1; day <= dayCount; day += 1) {
-    const dateValue = formatToYmd(new Date(year, month, day, 12))
-    cells.push({
-      key: dateValue,
-      dateValue,
-      day,
-      isPlaceholder: false,
-      isDisabled: dateValue < minDate,
-    })
-  }
-
-  while (cells.length % 7 !== 0) {
-    const index = cells.length
-    cells.push({
-      key: `tail-${year}-${month + 1}-${index}`,
-      dateValue: '',
-      day: 0,
-      isPlaceholder: true,
-      isDisabled: true,
-    })
-  }
-
-  return {
-    key: `${year}-${month + 1}`,
-    title: `${year}年${month + 1}月`,
-    cells,
-  }
-}
-
-const getCalendarMonths = (startDate: string, monthCount: number) => {
-  const baseDate = parseYmd(startDate)
-
-  if (!baseDate) {
-    return []
-  }
-
-  return Array.from({ length: monthCount }, (_, index) => {
-    const monthStartDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + index, 1, 12)
-    return createCalendarMonth(monthStartDate, startDate)
-  })
-}
+const dedupe = <T extends string>(items: readonly T[]) => Array.from(new Set(items)) as T[]
 
 export default function QueryPage() {
   const persistedScene = useSearchDraftStore((state) => state.scene)
@@ -122,33 +53,42 @@ export default function QueryPage() {
   const persistedLocationName = useSearchDraftStore((state) => state.locationName)
   const persistedStar = useSearchDraftStore((state) => state.selectedStar)
   const persistedPrice = useSearchDraftStore((state) => state.selectedPrice)
-  const persistedTags = useSearchDraftStore((state) => state.selectedTags)
   const persistedCheckInDate = useSearchDraftStore((state) => state.checkInDate)
   const persistedCheckOutDate = useSearchDraftStore((state) => state.checkOutDate)
   const patchSearchDraft = useSearchDraftStore((state) => state.patchDraft)
   const syncSearchDateRange = useSearchDraftStore((state) => state.syncDateRange)
 
-  const [today, setToday] = useState(() => getToday())
+  const initialToday = getToday()
+  const initialDateRange = normalizeDateRange(
+    persistedCheckInDate || initialToday,
+    persistedCheckOutDate || addDays(initialToday, 1),
+    initialToday,
+  )
+  const defaultCity = CITY_OPTIONS.includes(persistedLocationName as (typeof CITY_OPTIONS)[number])
+    ? persistedLocationName
+    : CITY_OPTIONS[0]
+  const defaultHotTags = dedupe([defaultCity, '上海', '深圳'].filter((tag) => HOT_DESTINATION_TAGS.includes(tag as (typeof HOT_DESTINATION_TAGS)[number])))
+
+  const [today, setToday] = useState(initialToday)
   const [activeScene, setActiveScene] = useState<(typeof SCENE_OPTIONS)[number]>(persistedScene)
-  const [keyword, setKeyword] = useState(persistedKeyword)
-  const [locationName, setLocationName] = useState(persistedLocationName)
+  const [activeField, setActiveField] = useState<SearchFieldKey>('keyword')
+  const [cityValue, setCityValue] = useState(defaultCity)
+  const [keyword, setKeyword] = useState(persistedKeyword || '')
+  const [checkInDate, setCheckInDate] = useState(initialDateRange.checkInDate)
+  const [checkOutDate, setCheckOutDate] = useState(initialDateRange.checkOutDate)
+  const [roomProfileIndex, setRoomProfileIndex] = useState(0)
+  const [selectedHotTags, setSelectedHotTags] = useState<string[]>(defaultHotTags)
+  const [bottomNav, setBottomNav] = useState<(typeof BOTTOM_NAV_ITEMS)[number]>(BOTTOM_NAV_ITEMS[0])
   const [isLocating, setIsLocating] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
-  const [selectedStar, setSelectedStar] = useState<(typeof STAR_OPTIONS)[number]>(persistedStar)
-  const [selectedPrice, setSelectedPrice] = useState<(typeof PRICE_OPTIONS)[number]>(persistedPrice)
-  const [selectedTags, setSelectedTags] = useState<string[]>(persistedTags)
-  const [checkInDate, setCheckInDate] = useState(persistedCheckInDate)
-  const [checkOutDate, setCheckOutDate] = useState(persistedCheckOutDate)
-  const [showCalendar, setShowCalendar] = useState(false)
-  const [calendarStep, setCalendarStep] = useState<'checkIn' | 'checkOut'>('checkIn')
-  const [calendarCheckInDate, setCalendarCheckInDate] = useState(persistedCheckInDate)
-  const [calendarCheckOutDate, setCalendarCheckOutDate] = useState(persistedCheckOutDate)
-
-  const bannerHotels = hotelCards.slice(0, 3)
-  const calendarMonths = useMemo(() => getCalendarMonths(today, CALENDAR_MONTH_COUNT), [today])
+  const [queryPressing, setQueryPressing] = useState(false)
 
   const stayNights = getStayNights(checkInDate, checkOutDate)
-  const tempStayNights = getStayNights(calendarCheckInDate, calendarCheckOutDate)
+  const roomProfile = ROOM_PROFILES[roomProfileIndex % ROOM_PROFILES.length]
+  const roomSummary = `${roomProfile.rooms}间房 · ${roomProfile.adults}成人${roomProfile.children > 0 ? ` ${roomProfile.children}儿童` : ''}`
+  const filterSummary = `${persistedPrice}/${persistedStar}`
+  const checkInText = formatDateLabel(checkInDate, today)
+  const checkOutText = formatDateLabel(checkOutDate, today)
 
   useEffect(() => {
     syncSearchDateRange()
@@ -158,20 +98,30 @@ export default function QueryPage() {
     patchSearchDraft({
       scene: activeScene,
       keyword,
-      locationName,
-      selectedStar,
-      selectedPrice,
-      selectedTags,
+      locationName: cityValue,
       checkInDate,
       checkOutDate,
+      selectedStar: persistedStar,
+      selectedPrice: persistedPrice,
     })
-  }, [activeScene, checkInDate, checkOutDate, keyword, locationName, patchSearchDraft, selectedPrice, selectedStar, selectedTags])
+  }, [
+    activeScene,
+    checkInDate,
+    checkOutDate,
+    cityValue,
+    keyword,
+    patchSearchDraft,
+    persistedPrice,
+    persistedStar,
+  ])
 
-  const syncDateRangeWithToday = () =>
-    syncDateRangeState(
-      { today, checkInDate, checkOutDate },
-      { setToday, setCheckInDate, setCheckOutDate },
-    )
+  const updateDateRange = (nextCheckInDate: string, nextCheckOutDate: string) => {
+    const latestToday = getToday()
+    const normalizedRange = normalizeDateRange(nextCheckInDate, nextCheckOutDate, latestToday)
+    setToday(latestToday)
+    setCheckInDate(normalizedRange.checkInDate)
+    setCheckOutDate(normalizedRange.checkOutDate)
+  }
 
   const handleLocate = async () => {
     if (isLocating) {
@@ -180,445 +130,185 @@ export default function QueryPage() {
 
     setIsLocating(true)
     try {
-      const settingResult = await Taro.getSetting()
-      const locationPermission = settingResult.authSetting?.[LOCATION_SCOPE]
-
-      if (locationPermission === false) {
-        const modalResult = await Taro.showModal({
-          title: '定位权限未开启',
-          content: '请在设置中开启定位权限后重试',
-          confirmText: '去设置',
-        })
-
-        if (modalResult.confirm) {
-          await Taro.openSetting()
-        }
-
-        return
-      }
-
-      if (locationPermission !== true) {
-        await Taro.authorize({ scope: LOCATION_SCOPE })
-      }
-
       const location = await Taro.getLocation({ type: 'gcj02' })
-      const latitude = Number(location.latitude).toFixed(4)
-      const longitude = Number(location.longitude).toFixed(4)
-      setLocationName(`已定位 ${latitude},${longitude}`)
-      Taro.showToast({ title: '定位成功', icon: 'success' })
+      const latitude = Number(location.latitude).toFixed(3)
+      const longitude = Number(location.longitude).toFixed(3)
+      setKeyword(`附近酒店 ${latitude},${longitude}`)
+      Taro.showToast({ title: '已定位附近酒店', icon: 'none' })
     } catch {
-      Taro.showToast({ title: '定位失败，请检查授权', icon: 'none' })
+      Taro.showToast({ title: '定位失败，请检查权限', icon: 'none' })
     } finally {
       setIsLocating(false)
     }
   }
 
-  const openHotelDetail = async (hotelId: string) => {
-    if (!hotelId) {
-      return
-    }
-
-    const normalizedRange = syncDateRangeWithToday()
-    const detailUrl = buildDetailUrl({
-      id: hotelId,
-      checkIn: normalizedRange.checkInDate,
-      checkOut: normalizedRange.checkOutDate,
-      source: 'query',
-    })
-
-    try {
-      await Taro.navigateTo({ url: detailUrl })
-    } catch {
-      Taro.showToast({ title: '页面打开失败，请稍后重试', icon: 'none' })
-    }
-  }
-
-  const openCalendar = () => {
-    const normalizedRange = syncDateRangeWithToday()
-    setCalendarCheckInDate(normalizedRange.checkInDate)
-    setCalendarCheckOutDate(normalizedRange.checkOutDate)
-    setCalendarStep('checkIn')
-    setShowCalendar(true)
-  }
-
-  const closeCalendar = () => {
-    setShowCalendar(false)
-  }
-
-  const resetCalendar = () => {
-    const latestToday = getSyncedDateRange(checkInDate, checkOutDate).today
-
-    setCalendarCheckInDate(latestToday)
-    setCalendarCheckOutDate(addDays(latestToday, 1))
-    setCalendarStep('checkIn')
-  }
-
-  const handleCalendarDayClick = (cell: CalendarCell) => {
-    if (cell.isPlaceholder || cell.isDisabled) {
-      return
-    }
-
-    if (calendarStep === 'checkIn') {
-      setCalendarCheckInDate(cell.dateValue)
-
-      if (cell.dateValue >= calendarCheckOutDate) {
-        setCalendarCheckOutDate(addDays(cell.dateValue, 1))
-      }
-
-      setCalendarStep('checkOut')
-      return
-    }
-
-    if (cell.dateValue <= calendarCheckInDate) {
-      return
-    }
-
-    setCalendarCheckOutDate(cell.dateValue)
-  }
-
-  const confirmCalendar = () => {
-    if (!isDateRangeValid(calendarCheckInDate, calendarCheckOutDate)) {
-      Taro.showToast({ title: '日期选择有误，请重新选择', icon: 'none' })
-      return
-    }
-
-    setCheckInDate(calendarCheckInDate)
-    setCheckOutDate(calendarCheckOutDate)
-    setShowCalendar(false)
-  }
-
-  const toggleTag = (tag: string) => {
-    setSelectedTags((prev) => {
-      if (prev.includes(tag)) {
-        return prev.filter((item) => item !== tag)
-      }
-      return [...prev, tag]
-    })
-  }
-
-  const handleSearch = async (nextKeyword = keyword) => {
+  const handleSearch = async () => {
     if (isSearching) {
       return
     }
 
-    const normalizedRange = syncDateRangeWithToday()
+    setQueryPressing(false)
+    const latestToday = getToday()
+    const normalizedRange = normalizeDateRange(checkInDate, checkOutDate, latestToday)
+    setToday(latestToday)
+    setCheckInDate(normalizedRange.checkInDate)
+    setCheckOutDate(normalizedRange.checkOutDate)
 
     if (!isDateRangeValid(normalizedRange.checkInDate, normalizedRange.checkOutDate)) {
-      Taro.showToast({ title: '日期选择有误，请重新选择', icon: 'none' })
+      Taro.showToast({ title: '日期选择有误', icon: 'none' })
       return
     }
 
-    const normalizedKeyword = nextKeyword.trim() || '不限'
-    const normalizedLocation = locationName.trim() || '全国'
     const queryString = buildQueryString({
+      source: 'query-home',
       scene: activeScene,
-      keyword: normalizedKeyword,
-      location: normalizedLocation,
+      keyword: keyword.trim() || '不限',
+      location: cityValue,
       checkIn: normalizedRange.checkInDate,
       checkOut: normalizedRange.checkOutDate,
-      star: selectedStar,
-      price: selectedPrice,
-      tags: selectedTags.join(','),
+      star: persistedStar,
+      price: persistedPrice,
     })
 
     setIsSearching(true)
     try {
-      await Taro.navigateTo({
-        url: `/pages/list/index?${queryString}`,
-      })
+      await Taro.navigateTo({ url: `/pages/list/index?${queryString}` })
     } catch {
-      Taro.showToast({ title: '查询失败，请稍后重试', icon: 'none' })
+      Taro.showToast({ title: '跳转失败，请重试', icon: 'none' })
     } finally {
       setIsSearching(false)
     }
   }
 
-  const handleKeywordInput = (event: { detail: { value: string } }) => {
-    setKeyword(event.detail.value)
-  }
+  const openBannerTarget = async (bannerHotelId: string) => {
+    const detailUrl = buildDetailUrl({
+      id: bannerHotelId,
+      source: 'query',
+      checkIn: checkInDate,
+      checkOut: checkOutDate,
+    })
 
-  const handleKeywordConfirm = (event?: { detail: { value: string } }) => {
-    const nextKeyword = event?.detail?.value ?? keyword
-    setKeyword(nextKeyword)
-    void handleSearch(nextKeyword)
-  }
-
-  const renderCalendarDay = (cell: CalendarCell) => {
-    if (cell.isPlaceholder) {
-      return <View key={cell.key} className='calendar-day is-placeholder' />
+    try {
+      await Taro.navigateTo({ url: detailUrl })
+    } catch {
+      Taro.showToast({ title: '页面打开失败', icon: 'none' })
     }
-
-    const isStepDisabled = calendarStep === 'checkOut' && cell.dateValue <= calendarCheckInDate
-    const isDisabled = cell.isDisabled || isStepDisabled
-    const isStart = cell.dateValue === calendarCheckInDate
-    const isEnd = cell.dateValue === calendarCheckOutDate
-    const isInRange = cell.dateValue >= calendarCheckInDate && cell.dateValue <= calendarCheckOutDate
-    const dayClassName = [
-      'calendar-day',
-      isDisabled ? 'is-disabled' : '',
-      isInRange ? 'is-range' : '',
-      isStart ? 'is-start' : '',
-      isEnd ? 'is-end' : '',
-    ]
-      .filter(Boolean)
-      .join(' ')
-
-    return (
-      <View
-        key={cell.key}
-        className={dayClassName}
-        onClick={() => {
-          if (isDisabled) {
-            return
-          }
-
-          handleCalendarDayClick(cell)
-        }}
-      >
-        <Text className='calendar-day-text'>{cell.day}</Text>
-        {isStart || isEnd ? <Text className='calendar-day-tip'>{isStart ? '住' : '离'}</Text> : null}
-      </View>
-    )
   }
+
+  const handleToggleHotTag = (tag: string) => {
+    setSelectedHotTags((previousTags) => {
+      if (previousTags.includes(tag)) {
+        return previousTags.filter((currentTag) => currentTag !== tag)
+      }
+
+      return dedupe([...previousTags, tag])
+    })
+  }
+
+  const handleRoomFieldFocus = () => {
+    setActiveField('room')
+    setRoomProfileIndex((previousIndex) => (previousIndex + 1) % ROOM_PROFILES.length)
+  }
+
+  const checkOutStartDate = useMemo(() => addDays(checkInDate, 1), [checkInDate])
 
   return (
     <View className='query-page'>
-      <ScrollView className='query-scroll' scrollY>
-        <Swiper
-          className='banner-swiper'
-          circular
-          autoplay
-          interval={3200}
-          duration={500}
-          indicatorDots
-          indicatorColor='rgba(255,255,255,0.45)'
-          indicatorActiveColor='#ffffff'
-        >
-          {bannerHotels.map((hotel) => (
-            <SwiperItem key={hotel.id}>
-              <View className='banner-card' onClick={() => void openHotelDetail(hotel.id)}>
-                <Image className='banner-bg' mode='aspectFill' src={hotel.coverImage} lazyLoad />
-                <View className='banner-mask' />
+      <ScrollView className='query-scroll safe-bottom' scrollY>
+        <View className='query-main'>
+          <View className='query-bg-blob query-bg-blob--warm' />
+          <View className='query-bg-blob query-bg-blob--cold' />
 
-                <View className='banner-content'>
-                  <View className='banner-tags'>
-                    {[hotel.star, ...hotel.tags.slice(0, 2)].map((tag) => (
-                      <Text key={tag} className='banner-pill'>
-                        {tag}
-                      </Text>
-                    ))}
-                  </View>
-                  <Text className='banner-title'>{hotel.name}</Text>
-                  <Text className='banner-desc'>{hotel.promo}</Text>
-                  <View className='banner-bottom'>
-                    <Text className='banner-price'>¥{hotel.price} 起/晚</Text>
-                    <View className='banner-cta'>
-                      <Text className='banner-cta-text'>立即查看</Text>
-                      <LiteIcon value='chevron-right' size='14' color='#1d4ed8' />
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </SwiperItem>
-          ))}
-        </Swiper>
-
-        <View className='search-card'>
-          <View className='scene-tabs'>
-            <AdaptiveSegmented
-              options={SCENE_OPTIONS}
-              value={activeScene}
-              onChange={(nextValue) => setActiveScene(nextValue as (typeof SCENE_OPTIONS)[number])}
-            />
+          <View className='query-header'>
+            <Text className='query-header-title'>酒店搜索首页</Text>
+            <Text className='query-header-subtitle'>营销曝光 + 搜索承接 + 运营入口</Text>
           </View>
 
-          <View className='field-card'>
-            <View className='field-header'>
-              <View className='field-title-wrap'>
-                <LiteIcon value='map-pin' size='14' color='#2563eb' />
-                <Text className='field-title'>当前地点</Text>
-              </View>
-              <View className={`location-btn ${isLocating ? 'is-loading' : ''}`} onClick={handleLocate}>
-                <Text>{isLocating ? '定位中...' : '重新定位'}</Text>
-              </View>
-            </View>
-            <Text className='location-value'>{locationName}</Text>
-          </View>
+          <BannerCarousel
+            items={MARKETING_BANNERS}
+            onActionClick={(bannerItem) => {
+              void openBannerTarget(bannerItem.hotelId)
+            }}
+          />
 
-          <View className='field-card'>
-            <View className='field-header'>
-              <View className='field-title-wrap'>
-                <LiteIcon value='search' size='14' color='#2563eb' />
-                <Text className='field-title'>关键词搜索</Text>
-              </View>
-            </View>
-            <View className='keyword-input-wrap'>
-              <LiteIcon value='search' size='14' color='#94a3b8' />
-              <Input
-                className='keyword-input'
-                value={keyword}
-                placeholder='位置 / 品牌 / 酒店名'
-                placeholderClass='keyword-placeholder'
-                confirmType='search'
-                onInput={handleKeywordInput}
-                onConfirm={handleKeywordConfirm}
-              />
-            </View>
-          </View>
+          <SearchFormCard
+            scenes={SCENE_OPTIONS}
+            activeScene={activeScene}
+            onSceneChange={(nextScene) => {
+              setActiveField('scene')
+              setActiveScene(nextScene as (typeof SCENE_OPTIONS)[number])
+            }}
+            cityOptions={CITY_OPTIONS}
+            cityValue={cityValue}
+            onCityChange={setCityValue}
+            keyword={keyword}
+            onKeywordChange={setKeyword}
+            onKeywordConfirm={() => void handleSearch()}
+            locating={isLocating}
+            onLocate={() => {
+              void handleLocate()
+            }}
+            today={today}
+            checkInDate={checkInDate}
+            checkOutDate={checkOutDate}
+            checkOutStartDate={checkOutStartDate}
+            onCheckInChange={(nextDate) => {
+              setActiveField('date')
+              updateDateRange(nextDate, checkOutDate)
+            }}
+            onCheckOutChange={(nextDate) => {
+              setActiveField('date')
+              updateDateRange(checkInDate, nextDate)
+            }}
+            checkInText={checkInText}
+            checkOutText={checkOutText}
+            stayNights={stayNights}
+            roomSummary={roomSummary}
+            filterSummary={filterSummary}
+            hotTags={HOT_DESTINATION_TAGS}
+            selectedHotTags={selectedHotTags}
+            onToggleHotTag={handleToggleHotTag}
+            activeField={activeField}
+            onFieldFocus={(field) => {
+              if (field === 'room') {
+                handleRoomFieldFocus()
+                return
+              }
 
-          <View className='field-card' onClick={openCalendar}>
-            <View className='field-header'>
-              <View className='field-title-wrap'>
-                <LiteIcon value='calendar' size='14' color='#2563eb' />
-                <Text className='field-title'>入住日期</Text>
-              </View>
-              <Text className='field-tip'>共 {stayNights} 晚</Text>
-            </View>
-            <View className='date-values'>
-              <View className='date-item'>
-                <Text className='date-label'>入住</Text>
-                <Text className='date-value'>{formatDate(checkInDate)}</Text>
-              </View>
+              setActiveField(field)
+            }}
+            searching={isSearching}
+            queryPressing={queryPressing}
+            onQueryPressingChange={setQueryPressing}
+            onSearch={() => {
+              void handleSearch()
+            }}
+            onFilterEntryClick={async () => {
+              try {
+                await Taro.navigateTo({ url: '/pages/filter/index?source=query-home' })
+              } catch {
+                Taro.showToast({ title: '筛选页加载失败', icon: 'none' })
+              }
+            }}
+          />
 
-              <View className='date-divider' />
-
-              <View className='date-item'>
-                <Text className='date-label'>离店</Text>
-                <Text className='date-value'>{formatDate(checkOutDate)}</Text>
-              </View>
-
-              <View className='night-pill'>
-                <Text>{stayNights}晚</Text>
-              </View>
-            </View>
-          </View>
-
-          <View className='field-card'>
-            <View className='field-header'>
-              <View className='field-title-wrap'>
-                <LiteIcon value='filter' size='14' color='#2563eb' />
-                <Text className='field-title'>筛选条件</Text>
-              </View>
-              <Text className='field-tip'>支持多维组合筛选</Text>
-            </View>
-
-            <Text className='group-title'>酒店星级</Text>
-            <View className='chip-row'>
-              {STAR_OPTIONS.map((option) => (
-                <View
-                  key={option}
-                  className={`filter-chip ${selectedStar === option ? 'active' : ''}`}
-                  onClick={() => setSelectedStar(option)}
-                >
-                  <Text>{option}</Text>
-                </View>
-              ))}
-            </View>
-
-            <Text className='group-title'>价格区间</Text>
-            <View className='chip-row'>
-              {PRICE_OPTIONS.map((option) => (
-                <View
-                  key={option}
-                  className={`filter-chip ${selectedPrice === option ? 'active' : ''}`}
-                  onClick={() => setSelectedPrice(option)}
-                >
-                  <Text>{option}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          <View className='field-card'>
-            <View className='field-header'>
-              <View className='field-title-wrap'>
-                <LiteIcon value='check-circle' size='14' color='#2563eb' />
-                <Text className='field-title'>快捷标签</Text>
-              </View>
-              <Text className='field-tip'>可多选</Text>
-            </View>
-
-            <View className='chip-row'>
-              {FILTER_TAG_OPTIONS.map((tag) => (
-                <View key={tag} className={`tag-chip ${selectedTags.includes(tag) ? 'active' : ''}`} onClick={() => toggleTag(tag)}>
-                  <Text>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          <AdaptivePrimaryButton loading={isSearching} text={isSearching ? '查询中...' : '查询酒店'} onClick={() => void handleSearch()} />
-        </View>
-
-        <View className='promo-grid'>
-          {PROMO_BLOCKS.map((item) => (
-            <View key={item.title} className={`promo-item ${item.color}`}>
-              <Text className='promo-title'>{item.title}</Text>
-              <Text className='promo-subtitle'>{item.subTitle}</Text>
-            </View>
-          ))}
+          <OperationPanel
+            coupon={COUPON_CONTENT}
+            quickEntries={QUICK_ENTRIES}
+            onCouponClick={() => Taro.showToast({ title: '优惠券已发放到账户', icon: 'none' })}
+            onQuickEntryClick={(entryItem) => Taro.showToast({ title: `${entryItem.title}建设中`, icon: 'none' })}
+          />
         </View>
       </ScrollView>
 
-      {showCalendar ? (
-        <View className='calendar-mask' onClick={closeCalendar}>
-          <View
-            className='calendar-panel'
-            onClick={(event) => {
-              event.stopPropagation()
-            }}
-          >
-            <View className='calendar-header'>
-              <View>
-                <Text className='calendar-title'>选择入住日期</Text>
-                <Text className='calendar-subtitle'>
-                  {calendarStep === 'checkIn' ? '请先选择入住日期' : '请选择离店日期'} · 共 {tempStayNights} 晚
-                </Text>
-              </View>
-              <View className='calendar-close' onClick={closeCalendar}>
-                <LiteIcon value='close' size='12' color='#64748b' />
-              </View>
-            </View>
-
-            <View className='calendar-preview'>
-              <View className='preview-item'>
-                <Text className='preview-label'>入住</Text>
-                <Text className='preview-date'>{formatDate(calendarCheckInDate)}</Text>
-              </View>
-              <View className='preview-item'>
-                <Text className='preview-label'>离店</Text>
-                <Text className='preview-date'>{formatDate(calendarCheckOutDate)}</Text>
-              </View>
-            </View>
-
-            <View className='calendar-week-row'>
-              {WEEK_DAYS.map((day) => (
-                <Text key={day} className='week-item'>
-                  {day}
-                </Text>
-              ))}
-            </View>
-
-            <ScrollView className='calendar-months' scrollY>
-              {calendarMonths.map((month) => (
-                <View key={month.key} className='calendar-month'>
-                  <Text className='calendar-month-title'>{month.title}</Text>
-                  <View className='calendar-grid'>{month.cells.map((cell) => renderCalendarDay(cell))}</View>
-                </View>
-              ))}
-            </ScrollView>
-
-            <View className='calendar-actions'>
-              <View className='calendar-action ghost' onClick={resetCalendar}>
-                <Text>重置</Text>
-              </View>
-              <View className='calendar-action primary' onClick={confirmCalendar}>
-                <Text>确定</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      ) : null}
+      <BottomNav
+        tabs={BOTTOM_NAV_ITEMS}
+        activeTab={bottomNav}
+        onTabChange={(tab) => {
+          setBottomNav(tab as (typeof BOTTOM_NAV_ITEMS)[number])
+          Taro.showToast({ title: `${tab}频道`, icon: 'none' })
+        }}
+      />
     </View>
   )
 }
