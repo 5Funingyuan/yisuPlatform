@@ -1,0 +1,22 @@
+@use './styles/tokens.scss' as *;
+
+page,
+view,
+text,
+image,
+input,
+scroll-view {
+  box-sizing: border-box;
+}
+
+page {
+  background: var(--ys-color-bg);
+  font-family: var(--ys-font-family);
+  color: var(--ys-color-text);
+}
+
+#app,
+.taro_page {
+  background: var(--ys-color-bg);
+  color: var(--ys-color-text);
+}

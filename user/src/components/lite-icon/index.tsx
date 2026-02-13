@@ -1,5 +1,5 @@
 import { Text } from '@tarojs/components'
-import './style.less'
+import './style.scss'
 
 interface LiteIconProps {
   name?: string

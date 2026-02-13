@@ -1,0 +1,43 @@
+.adaptive-segmented {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.adaptive-segmented-item {
+  height: 42px;
+  border-radius: var(--ys-radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ys-color-border);
+  background: #fff;
+
+  text {
+    color: #334155;
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  &.active {
+    background: var(--ys-color-primary-soft);
+    border-color: #b6dcff;
+
+    text {
+      color: var(--ys-color-primary);
+      font-weight: 600;
+    }
+  }
+}
+
+.adaptive-segmented-h5.ant-segmented {
+  width: 100%;
+  background: #eef2f7;
+  border-radius: var(--ys-radius-pill);
+
+  .ant-segmented-item {
+    min-height: 40px;
+    color: #334155;
+    font-size: 15px;
+  }
+}

@@ -1,0 +1,29 @@
+.adaptive-primary-btn {
+  margin-top: 12px;
+  height: 74px;
+  border-radius: var(--ys-radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f5dd9 0%, #2a8bff 100%);
+  box-shadow: 0 12px 20px rgba(37, 99, 235, 0.3);
+
+  text {
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  &.is-loading {
+    opacity: 0.7;
+  }
+}
+
+.adaptive-primary-btn-h5.ant-btn.ant-btn-primary.ant-btn-lg {
+  margin-top: 12px;
+  height: 50px;
+  border-radius: var(--ys-radius-pill);
+  font-weight: 600;
+  font-size: 16px;
+}

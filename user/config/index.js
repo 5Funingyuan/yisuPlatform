@@ -18,6 +18,9 @@ const config = {
   framework: 'react',
   compiler: {
     type: 'webpack5',
+    prebundle: {
+      enable: false,
+    },
   },
   cache: {
     enable: true,
