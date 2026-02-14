@@ -1,7 +1,7 @@
 import { Input, Picker, Text, View } from '@tarojs/components'
 import LiteIcon from '../../../components/lite-icon'
 
-export type SearchFieldKey = 'scene' | 'keyword' | 'date' | 'room' | 'hot'
+export type SearchFieldKey = 'scene' | 'keyword' | 'date' | 'room'
 
 interface SearchFormCardProps {
   scenes: readonly string[]
@@ -26,9 +26,6 @@ interface SearchFormCardProps {
   stayNights: number
   roomSummary: string
   filterSummary: string
-  hotTags: readonly string[]
-  selectedHotTags: string[]
-  onToggleHotTag: (tag: string) => void
   activeField: SearchFieldKey
   onFieldFocus: (field: SearchFieldKey) => void
   searching: boolean
@@ -40,7 +37,6 @@ interface SearchFormCardProps {
 
 const focusClassName = (focused: boolean) => (focused ? 'is-focused' : '')
 const sceneTabClassName = (active: boolean) => (active ? 'query-scene-tab is-active' : 'query-scene-tab')
-const hotTagClassName = (selected: boolean) => (selected ? 'query-hot-tag is-selected' : 'query-hot-tag')
 const submitButtonClassName = (queryPressing: boolean, searching: boolean) => {
   const classNames = ['query-submit-button']
 
@@ -53,6 +49,22 @@ const submitButtonClassName = (queryPressing: boolean, searching: boolean) => {
   }
 
   return classNames.join(' ')
+}
+
+const splitDateText = (value: string) => {
+  const matched = value.trim().match(/^(\S+)\s+(\S+)$/)
+
+  if (!matched) {
+    return {
+      secondary: '日期',
+      primary: value,
+    }
+  }
+
+  return {
+    secondary: matched[1],
+    primary: matched[2],
+  }
 }
 
 export default function SearchFormCard({
@@ -78,9 +90,6 @@ export default function SearchFormCard({
   stayNights,
   roomSummary,
   filterSummary,
-  hotTags,
-  selectedHotTags,
-  onToggleHotTag,
   activeField,
   onFieldFocus,
   searching,
@@ -90,6 +99,8 @@ export default function SearchFormCard({
   onFilterEntryClick,
 }: SearchFormCardProps) {
   const activeTabIndex = Math.max(0, scenes.indexOf(activeScene))
+  const checkInParts = splitDateText(checkInText)
+  const checkOutParts = splitDateText(checkOutText)
 
   return (
     <View className='query-search-card'>
@@ -111,11 +122,8 @@ export default function SearchFormCard({
         </View>
       </View>
 
-      <View
-        className={`query-field-card ${focusClassName(activeField === 'keyword')}`}
-        onClick={() => onFieldFocus('keyword')}
-      >
-        <View className='query-keyword-row'>
+      <View className='query-merged-panel'>
+        <View className={`query-merged-row query-merged-row--destination ${focusClassName(activeField === 'keyword')}`}>
           <Picker
             mode='selector'
             range={[...cityOptions]}
@@ -126,26 +134,35 @@ export default function SearchFormCard({
               onFieldFocus('keyword')
             }}
           >
-            <View className='query-city-chip'>
-              <Text className='query-city-chip-text'>{cityValue}</Text>
-              <Text className='query-city-chip-arrow'>▼</Text>
+            <View className='query-city-block' onClick={() => onFieldFocus('keyword')}>
+              <Text className='query-row-kicker'>城市</Text>
+              <View className='query-city-main'>
+                <Text className='query-city-main-text'>{cityValue}</Text>
+                <Text className='query-city-main-arrow'>▼</Text>
+              </View>
             </View>
           </Picker>
 
-          <View className='query-field-divider' />
+          <View className='query-merged-vline' />
 
-          <LiteIcon value='search' size='14' color='#94a3b8' />
+          <View className='query-keyword-block' onClick={() => onFieldFocus('keyword')}>
+            <Text className='query-row-kicker'>关键词</Text>
 
-          <Input
-            className='query-search-input'
-            value={keyword}
-            placeholder='位置 / 品牌 / 酒店'
-            placeholderClass='query-search-placeholder'
-            confirmType='search'
-            onFocus={() => onFieldFocus('keyword')}
-            onInput={(event) => onKeywordChange(event.detail.value)}
-            onConfirm={onKeywordConfirm}
-          />
+            <View className='query-search-input-wrap'>
+              <LiteIcon value='search' size='14' color='#94a3b8' />
+
+              <Input
+                className='query-search-input'
+                value={keyword}
+                placeholder='位置 / 品牌 / 酒店'
+                placeholderClass='query-search-placeholder'
+                confirmType='search'
+                onFocus={() => onFieldFocus('keyword')}
+                onInput={(event) => onKeywordChange(event.detail.value)}
+                onConfirm={onKeywordConfirm}
+              />
+            </View>
+          </View>
 
           <View
             className='query-locate-button'
@@ -154,64 +171,62 @@ export default function SearchFormCard({
               onLocate()
             }}
           >
-            <LiteIcon value='map-pin' size='13' color='#2563eb' />
+            <View className='query-locate-glyph'>
+              <View className='query-locate-glyph-dot' />
+            </View>
           </View>
         </View>
 
         {locating ? <Text className='query-locate-hint'>定位中...</Text> : null}
-      </View>
 
-      <View className={`query-field-card ${focusClassName(activeField === 'date')}`} onClick={() => onFieldFocus('date')}>
-        <View className='query-date-row'>
+        <View className='query-row-divider' />
+
+        <View className={`query-merged-row query-merged-row--date ${focusClassName(activeField === 'date')}`} onClick={() => onFieldFocus('date')}>
           <View className='query-date-col'>
-            <Text className='query-field-label'>入住</Text>
+            <Text className='query-row-kicker'>入住</Text>
             <Picker mode='date' value={checkInDate} start={today} onChange={(event) => onCheckInChange(event.detail.value)}>
-              <Text className='query-date-value'>{checkInText}</Text>
+              <Text className='query-date-main'>{checkInParts.primary}</Text>
             </Picker>
+            <Text className='query-date-sub'>{checkInParts.secondary}</Text>
           </View>
 
-          <View className='query-date-divider' />
+          <View className='query-date-split' />
 
           <View className='query-date-col'>
-            <Text className='query-field-label'>离店</Text>
+            <Text className='query-row-kicker'>离店</Text>
             <Picker mode='date' value={checkOutDate} start={checkOutStartDate} onChange={(event) => onCheckOutChange(event.detail.value)}>
-              <Text className='query-date-value'>{checkOutText}</Text>
+              <Text className='query-date-main'>{checkOutParts.primary}</Text>
             </Picker>
+            <Text className='query-date-sub'>{checkOutParts.secondary}</Text>
           </View>
 
-          <View className='query-night-pill'>
-            <Text className='query-night-pill-text'>{stayNights}晚</Text>
+          <View className='query-night-box'>
+            <Text className='query-night-main'>{stayNights}晚</Text>
+            <Text className='query-night-sub'>{`共${stayNights}晚`}</Text>
           </View>
         </View>
-      </View>
 
-      <View className={`query-field-card ${focusClassName(activeField === 'room')}`} onClick={() => onFieldFocus('room')}>
-        <View className='query-room-row'>
+        <View className='query-row-divider' />
+
+        <View className={`query-merged-row query-merged-row--room ${focusClassName(activeField === 'room')}`} onClick={() => onFieldFocus('room')}>
           <View className='query-room-main'>
-            <Text className='query-field-label'>房间与人数</Text>
+            <Text className='query-row-kicker'>房间与人数</Text>
             <Text className='query-room-value'>{roomSummary}</Text>
           </View>
 
-          <View className='query-date-divider' />
+          <View className='query-room-split' />
 
-          <View className='query-filter-entry' onClick={onFilterEntryClick}>
-            <Text className='query-filter-entry-text'>{filterSummary}</Text>
+          <View
+            className='query-filter-entry'
+            onClick={(event) => {
+              event.stopPropagation()
+              onFilterEntryClick()
+            }}
+          >
+            <Text className='query-filter-entry-main'>价格/星级</Text>
+            <Text className='query-filter-entry-sub'>{filterSummary}</Text>
             <LiteIcon value='chevron-right' size='14' color='#94a3b8' />
           </View>
-        </View>
-      </View>
-
-      <View className='query-hot-wrap' onClick={() => onFieldFocus('hot')}>
-        <Text className='query-hot-title'>热门目的地</Text>
-        <View className='query-hot-list'>
-          {hotTags.map((tag) => {
-            const selected = selectedHotTags.includes(tag)
-            return (
-              <View key={tag} className={hotTagClassName(selected)} onClick={() => onToggleHotTag(tag)}>
-                <Text className='query-hot-tag-text'>{tag}</Text>
-              </View>
-            )
-          })}
         </View>
       </View>
 
