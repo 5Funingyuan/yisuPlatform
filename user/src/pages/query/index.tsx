@@ -1,4 +1,4 @@
-import { ScrollView, Text, View } from '@tarojs/components'
+import { ScrollView, View } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useEffect, useMemo, useState } from 'react'
 import { addDays, getStayNights, getToday, isDateRangeValid, normalizeDateRange, parseYmd } from '../../shared/date'
@@ -10,7 +10,6 @@ import {
   BOTTOM_NAV_ITEMS,
   CITY_OPTIONS,
   COUPON_CONTENT,
-  HOT_DESTINATION_TAGS,
   MARKETING_BANNERS,
   QUICK_ENTRIES,
   ROOM_PROFILES,
@@ -45,8 +44,6 @@ const formatDateLabel = (dateValue: string, todayValue: string) => {
   return `${weekText} ${month}/${day}`
 }
 
-const dedupe = <T extends string>(items: readonly T[]) => Array.from(new Set(items)) as T[]
-
 export default function QueryPage() {
   const persistedScene = useSearchDraftStore((state) => state.scene)
   const persistedKeyword = useSearchDraftStore((state) => state.keyword)
@@ -67,7 +64,6 @@ export default function QueryPage() {
   const defaultCity = CITY_OPTIONS.includes(persistedLocationName as (typeof CITY_OPTIONS)[number])
     ? persistedLocationName
     : CITY_OPTIONS[0]
-  const defaultHotTags = dedupe([defaultCity, '上海', '深圳'].filter((tag) => HOT_DESTINATION_TAGS.includes(tag as (typeof HOT_DESTINATION_TAGS)[number])))
 
   const [today, setToday] = useState(initialToday)
   const [activeScene, setActiveScene] = useState<(typeof SCENE_OPTIONS)[number]>(persistedScene)
@@ -77,7 +73,6 @@ export default function QueryPage() {
   const [checkInDate, setCheckInDate] = useState(initialDateRange.checkInDate)
   const [checkOutDate, setCheckOutDate] = useState(initialDateRange.checkOutDate)
   const [roomProfileIndex, setRoomProfileIndex] = useState(0)
-  const [selectedHotTags, setSelectedHotTags] = useState<string[]>(defaultHotTags)
   const [bottomNav, setBottomNav] = useState<(typeof BOTTOM_NAV_ITEMS)[number]>(BOTTOM_NAV_ITEMS[0])
   const [isLocating, setIsLocating] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
@@ -195,16 +190,6 @@ export default function QueryPage() {
     }
   }
 
-  const handleToggleHotTag = (tag: string) => {
-    setSelectedHotTags((previousTags) => {
-      if (previousTags.includes(tag)) {
-        return previousTags.filter((currentTag) => currentTag !== tag)
-      }
-
-      return dedupe([...previousTags, tag])
-    })
-  }
-
   const handleRoomFieldFocus = () => {
     setActiveField('room')
     setRoomProfileIndex((previousIndex) => (previousIndex + 1) % ROOM_PROFILES.length)
@@ -218,11 +203,6 @@ export default function QueryPage() {
         <View className='query-main'>
           <View className='query-bg-blob query-bg-blob--warm' />
           <View className='query-bg-blob query-bg-blob--cold' />
-
-          <View className='query-header'>
-            <Text className='query-header-title'>酒店搜索首页</Text>
-            <Text className='query-header-subtitle'>营销曝光 + 搜索承接 + 运营入口</Text>
-          </View>
 
           <BannerCarousel
             items={MARKETING_BANNERS}
@@ -265,9 +245,6 @@ export default function QueryPage() {
             stayNights={stayNights}
             roomSummary={roomSummary}
             filterSummary={filterSummary}
-            hotTags={HOT_DESTINATION_TAGS}
-            selectedHotTags={selectedHotTags}
-            onToggleHotTag={handleToggleHotTag}
             activeField={activeField}
             onFieldFocus={(field) => {
               if (field === 'room') {

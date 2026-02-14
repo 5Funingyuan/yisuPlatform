@@ -26,10 +26,6 @@ export default function BannerCarousel({ items, onActionClick }: BannerCarouselP
               <View className='query-banner-mask' />
 
               <View className='query-banner-content'>
-                <View className='query-banner-corner'>
-                  <Text className='query-banner-corner-text'>{item.cornerTag}</Text>
-                </View>
-
                 <View className='query-banner-main'>
                   <Text className='query-banner-title'>{item.title}</Text>
                   <Text className='query-banner-subtitle'>{item.subtitle}</Text>
