@@ -13,7 +13,7 @@ import {
 } from '../shared/search-options'
 import type { HotelListItem, HotelSortType } from '../services/hotel-list-service'
 
-const STORAGE_KEY = 'yisu-user-hotel-list-v1'
+const STORAGE_KEY = 'yisu-user-hotel-list-v4'
 const DEFAULT_PAGE_SIZE = 10
 
 export interface HotelSearchConditions {

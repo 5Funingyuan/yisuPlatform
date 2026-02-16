@@ -1,8 +1,7 @@
 import { Image, Input, Picker, ScrollView, Text, View } from '@tarojs/components'
 import Taro, { useReachBottom, useRouter } from '@tarojs/taro'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import LiteIcon from '../../components/lite-icon'
-import AdaptiveEmptyState from '../../components/adaptive/empty-state'
 import { addDays, getStayNights, getToday, normalizeDateRange, normalizeYmd, parseYmd } from '../../shared/date'
 import { buildQueryString, decodeParam } from '../../shared/route'
 import { buildDetailUrl, QUERY_PAGE_PATH } from '../../shared/search-context'
@@ -19,6 +18,9 @@ import type { HotelListItem } from './mock'
 import './style.scss'
 
 const PAGE_SIZE = 10
+const DeferredAdaptiveEmptyState = lazy(() =>
+  import(/* webpackChunkName: "adaptive-empty-state" */ '../../components/adaptive/empty-state'),
+)
 
 const SORT_TABS = [
   { key: 'recommend', label: '推荐排序' },
@@ -441,7 +443,9 @@ export default function HotelListPage() {
     try {
       const mergedTags = Array.from(new Set([...selectedTags, ...selectedQuickFilters]))
       const detailUrl = buildDetailUrl({
-        id: hotel.hotelId,
+        id: hotel.itemId,
+        hotelId: hotel.hotelId,
+        listItemId: hotel.itemId,
         source: 'list',
         scene: searchConditions.scene,
         keyword: searchConditions.keyword || undefined,
@@ -601,7 +605,9 @@ export default function HotelListPage() {
         ) : null}
 
         {!initialLoading && !pageError && cachedItems.length === 0 ? (
-          <AdaptiveEmptyState title='暂无匹配酒店' description='可尝试调整城市、关键词或筛选条件' />
+          <Suspense fallback={<View className='hotel-empty-fallback'>暂无匹配酒店，请稍后重试</View>}>
+            <DeferredAdaptiveEmptyState title='暂无匹配酒店' description='可尝试调整城市、关键词或筛选条件' />
+          </Suspense>
         ) : null}
 
         {cachedItems.map((hotel) => (

@@ -1,5 +1,5 @@
 import type { PriceOption, SceneOption, StarOption } from '../shared/search-options'
-import { HOTEL_LIST_POOL, type HotelListItem } from '../pages/list/mock'
+import type { HotelListItem } from '../pages/list/mock'
 
 export const HOTEL_SORT_OPTIONS = ['recommend', 'distance', 'price', 'score'] as const
 export type HotelSortType = (typeof HOTEL_SORT_OPTIONS)[number]
@@ -34,12 +34,66 @@ export interface HotelListPageResult {
   hasMore: boolean
 }
 
+let hotelListPoolPromise: Promise<HotelListItem[]> | null = null
+
+const loadHotelListPool = async () => {
+  if (!hotelListPoolPromise) {
+    hotelListPoolPromise = import('../pages/list/mock').then((module) => module.HOTEL_LIST_POOL)
+  }
+
+  return hotelListPoolPromise
+}
+
 const BASE_QUICK_FILTERS = ['含早餐', '免费取消', '高评分', '低价优先'] as const
-const DISTANCE_KEYWORDS = ['近古城门', '近洱海公园', '近双廊古镇', '近大理大学', '近崇圣寺三塔'] as const
+const DISTANCE_KEYWORDS = [
+  '近地铁 1 号线',
+  '近地铁 2 号线',
+  '近外滩',
+  '近国家会展中心',
+  '近迪士尼接驳点',
+  '近豫园商圈',
+  '近国贸商圈',
+  '近天安门',
+  '近鸟巢',
+  '近雍和宫',
+  '近深圳湾公园',
+  '近会展中心',
+  '近科技园',
+  '近口岸通关点',
+  '近西湖',
+  '近龙翔桥地铁站',
+  '近钱塘江',
+  '近湖滨步行街',
+  '近黄龙商圈',
+  '近春熙路',
+  '近宽窄巷子',
+  '近天府广场',
+  '近锦里',
+  '近海边步道',
+  '近免税店',
+  '近海昌梦幻城',
+  '近机场快线',
+  '近椰梦长廊',
+  '近古城门',
+  '近洱海公园',
+  '近双廊古镇',
+  '近大理大学',
+  '近崇圣寺三塔',
+] as const
+
+const CITY_LOCAL_QUICK_FILTERS: Record<string, string> = {
+  上海: '近外滩',
+  北京: '近国贸商圈',
+  深圳: '近会展中心',
+  杭州: '近西湖',
+  成都: '近春熙路',
+  三亚: '近海边步道',
+  大理: '近古城',
+}
 
 export const buildQuickFilterOptions = (city: string) => {
   const normalizedCity = city.trim().replace(/市$/, '')
-  const localTag = normalizedCity ? `${normalizedCity}古城` : '热门地段'
+  const localTag = CITY_LOCAL_QUICK_FILTERS[normalizedCity] || '热门地段'
   return [localTag, ...BASE_QUICK_FILTERS]
 }
 
@@ -59,6 +113,19 @@ const parseDistanceToMeter = (distanceText: string) => {
 
   const distanceIndex = DISTANCE_KEYWORDS.findIndex((keyword) => distanceText.includes(keyword))
   return distanceIndex === -1 ? Number.MAX_SAFE_INTEGER : (distanceIndex + 1) * 100
+}
+
+const normalizeCityName = (city: string) => {
+  const normalizedCity = city.trim()
+  if (!normalizedCity) {
+    return ''
+  }
+
+  if (normalizedCity === '全国' || normalizedCity.startsWith('已定位')) {
+    return normalizedCity
+  }
+
+  return normalizedCity.endsWith('市') ? normalizedCity : `${normalizedCity}市`
 }
 
 const isPriceMatched = (priceValue: number, selectedPrice: PriceOption) => {
@@ -97,7 +164,12 @@ const isQuickFilterMatched = (hotel: HotelListItem, quickFilter: string) => {
     return hotel.price <= 360
   }
 
-  return hotel.tags.includes(quickFilter) || hotel.specialDesc.includes(quickFilter)
+  return (
+    hotel.tags.includes(quickFilter) ||
+    hotel.specialDesc.includes(quickFilter) ||
+    hotel.distance.includes(quickFilter) ||
+    hotel.locationZone.includes(quickFilter)
+  )
 }
 
 const getRecommendScore = (hotel: HotelListItem, scene: SceneOption) => {
@@ -145,18 +217,14 @@ const isKeywordMatched = (hotel: HotelListItem, normalizedKeyword: string) => {
 }
 
 const isCityMatched = (hotel: HotelListItem, city: string) => {
-  const normalizedCity = city.trim()
+  const normalizedCity = normalizeCityName(city)
   const normalizedCityKeyword = normalizedCity.replace(/市$/, '')
 
   if (!normalizedCityKeyword || normalizedCity === '全国' || normalizedCity.startsWith('已定位')) {
     return true
   }
 
-  return (
-    hotel.city.includes(normalizedCityKeyword) ||
-    hotel.address.includes(normalizedCityKeyword) ||
-    hotel.locationZone.includes(normalizedCityKeyword)
-  )
+  return normalizeCityName(hotel.city) === normalizedCity
 }
 
 export const fetchHotelListPage = async (query: HotelListQuery): Promise<HotelListPageResult> => {
@@ -169,8 +237,9 @@ export const fetchHotelListPage = async (query: HotelListQuery): Promise<HotelLi
   }
 
   await sleep(380 + Math.round(Math.random() * 240))
+  const hotelListPool = await loadHotelListPool()
 
-  const filteredList = HOTEL_LIST_POOL.filter((hotel) => {
+  const filteredList = hotelListPool.filter((hotel) => {
     if (!isCityMatched(hotel, query.city)) {
       return false
     }

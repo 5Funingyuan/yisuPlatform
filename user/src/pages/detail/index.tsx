@@ -1,7 +1,6 @@
 import { Image, Picker, Swiper, SwiperItem, Text, View } from '@tarojs/components'
 import Taro, { usePageScroll, useRouter } from '@tarojs/taro'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import AdaptiveEmptyState from '../../components/adaptive/empty-state'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import LiteIcon from '../../components/lite-icon'
 import { addDays, getStayNights, getToday, normalizeDateRange, normalizeYmd, parseYmd } from '../../shared/date'
 import { buildQueryString, safeDecode } from '../../shared/route'
@@ -28,6 +27,9 @@ import './style.scss'
 
 const WEEK_DAYS = ['日', '一', '二', '三', '四', '五', '六'] as const
 const DEFAULT_ROOM_SUMMARY = '1间房 · 2成人'
+const DeferredAdaptiveEmptyState = lazy(() =>
+  import(/* webpackChunkName: "adaptive-empty-state" */ '../../components/adaptive/empty-state'),
+)
 
 const normalizeOption = <T extends readonly string[]>(value: string, options: T, fallback: T[number]) => {
   return options.includes(value as T[number]) ? (value as T[number]) : fallback
@@ -116,8 +118,12 @@ export default function HotelDetailPage() {
   const params = router.params || {}
   const routeSignature = JSON.stringify(params)
 
+  const routeId = safeDecode(params.id)
+  const routeHotelId = safeDecode(params.hotelId)
+  const routeListItemId = safeDecode(params.listItemId || params.listitemid || params.itemId)
   const source = safeDecode(params.source)
-  const hotelId = safeDecode(params.id)
+  const hotelId = routeHotelId || routeId
+  const listItemId = routeListItemId
   const routeScene = safeDecode(params.scene)
   const routeKeyword = safeDecode(params.keyword)
   const routePrice = safeDecode(params.price)
@@ -349,8 +355,8 @@ export default function HotelDetailPage() {
       try {
         const payload =
           mode === 'refresh'
-            ? await refreshHotelRoomPrices(hotelId, roomFilter)
-            : await fetchHotelDetailPayload(hotelId, roomFilter)
+            ? await refreshHotelRoomPrices(hotelId, roomFilter, listItemId)
+            : await fetchHotelDetailPayload(hotelId, roomFilter, listItemId)
 
         if (requestToken !== requestTokenRef.current) {
           return
@@ -372,7 +378,7 @@ export default function HotelDetailPage() {
         }
       }
     },
-    [applyPayload, hotelId, roomFilter],
+    [applyPayload, hotelId, listItemId, roomFilter],
   )
 
   useEffect(() => {
@@ -779,10 +785,12 @@ export default function HotelDetailPage() {
 
           {!loading && !errorText && !filterLoading && sortedRoomPlans.length === 0 ? (
             <View className='section-feedback'>
-              <AdaptiveEmptyState
-                title='当前筛选条件下暂无可售房型'
-                description='建议放宽价格档或取消早餐/可取消限制'
-              />
+              <Suspense fallback={<Text className='feedback-text'>当前筛选条件下暂无可售房型</Text>}>
+                <DeferredAdaptiveEmptyState
+                  title='当前筛选条件下暂无可售房型'
+                  description='建议放宽价格档或取消早餐/可取消限制'
+                />
+              </Suspense>
               <View className='feedback-btn' onClick={handleResetFilter}>
                 <Text>重置筛选</Text>
               </View>

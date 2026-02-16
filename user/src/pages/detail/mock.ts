@@ -1,4 +1,5 @@
 import { hotelCards } from '../query/mock'
+import { HOTEL_LIST_POOL } from '../list/mock'
 
 export interface HotelRoomPlan {
   id: string
@@ -861,12 +862,31 @@ const DETAIL_RECORDS: Record<
 
 const cloneRoomPlans = (roomPlans: HotelRoomPlan[]) => roomPlans.map((plan) => ({ ...plan, tags: [...plan.tags] }))
 
-export const getHotelDetailById = (hotelId?: string): HotelDetailData => {
-  const baseHotel = hotelCards.find((item) => item.id === hotelId) || hotelCards[0]
+const uniqueStrings = (values: string[]) => Array.from(new Set(values.filter(Boolean)))
+
+const getListVariant = (hotelId?: string, listItemId?: string) => {
+  if (listItemId) {
+    const matchedByListItemId = HOTEL_LIST_POOL.find((item) => item.itemId === listItemId)
+    if (matchedByListItemId) {
+      return matchedByListItemId
+    }
+  }
+
+  if (!hotelId) {
+    return undefined
+  }
+
+  return HOTEL_LIST_POOL.find((item) => item.itemId === hotelId) || HOTEL_LIST_POOL.find((item) => item.hotelId === hotelId)
+}
+
+export const getHotelDetailById = (hotelId?: string, listItemId?: string): HotelDetailData => {
+  const listVariant = getListVariant(hotelId, listItemId)
+  const baseHotelId = listVariant?.hotelId || hotelId
+  const baseHotel = hotelCards.find((item) => item.id === baseHotelId) || hotelCards[0]
   const detailRecord = DETAIL_RECORDS[baseHotel.id]
 
   if (!detailRecord) {
-    return {
+    const fallbackDetail: HotelDetailData = {
       id: baseHotel.id,
       name: baseHotel.name,
       star: baseHotel.star,
@@ -900,9 +920,25 @@ export const getHotelDetailById = (hotelId?: string): HotelDetailData => {
         },
       ],
     }
+
+    if (!listVariant) {
+      return fallbackDetail
+    }
+
+    return {
+      ...fallbackDetail,
+      name: listVariant.name,
+      star: listVariant.star,
+      address: listVariant.address,
+      rating: listVariant.rating,
+      reviewCount: listVariant.reviewCount,
+      collectCount: listVariant.collectCount,
+      mapLabel: `${listVariant.city.replace(/市$/, '')} · ${listVariant.locationZone}`,
+      facilities: uniqueStrings([...fallbackDetail.facilities, ...listVariant.tags]),
+    }
   }
 
-  return {
+  const baseDetail: HotelDetailData = {
     id: baseHotel.id,
     name: baseHotel.name,
     star: baseHotel.star,
@@ -914,5 +950,21 @@ export const getHotelDetailById = (hotelId?: string): HotelDetailData => {
     mapLabel: detailRecord.mapLabel,
     gallery: detailRecord.gallery.map((item) => ({ ...item })),
     roomPlans: cloneRoomPlans(detailRecord.roomPlans),
+  }
+
+  if (!listVariant) {
+    return baseDetail
+  }
+
+  return {
+    ...baseDetail,
+    name: listVariant.name,
+    star: listVariant.star,
+    address: listVariant.address,
+    rating: listVariant.rating,
+    reviewCount: listVariant.reviewCount,
+    collectCount: listVariant.collectCount,
+    mapLabel: `${listVariant.city.replace(/市$/, '')} · ${listVariant.locationZone}`,
+    facilities: uniqueStrings([...baseDetail.facilities, ...listVariant.tags]),
   }
 }
