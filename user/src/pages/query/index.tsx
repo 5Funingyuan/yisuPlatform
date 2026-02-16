@@ -1,6 +1,6 @@
 import { ScrollView, View } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { addDays, getStayNights, getToday, isDateRangeValid, normalizeDateRange, parseYmd } from '../../shared/date'
 import { buildQueryString } from '../../shared/route'
 import { buildDetailUrl } from '../../shared/search-context'
@@ -15,12 +15,14 @@ import {
   ROOM_PROFILES,
 } from './entry-mock'
 import BannerCarousel from './components/banner-carousel'
-import BottomNav from './components/bottom-nav'
-import OperationPanel from './components/operation-panel'
 import SearchFormCard, { type SearchFieldKey } from './components/search-form-card'
 import './style.scss'
 
 const WEEK_DAYS = ['日', '一', '二', '三', '四', '五', '六'] as const
+const DeferredOperationPanel = lazy(() =>
+  import(/* webpackChunkName: "query-operation-panel" */ './components/operation-panel'),
+)
+const DeferredBottomNav = lazy(() => import(/* webpackChunkName: "query-bottom-nav" */ './components/bottom-nav'))
 
 const formatDateLabel = (dateValue: string, todayValue: string) => {
   const parsedDate = parseYmd(dateValue)
@@ -74,6 +76,7 @@ export default function QueryPage() {
   const [checkOutDate, setCheckOutDate] = useState(initialDateRange.checkOutDate)
   const [roomProfileIndex, setRoomProfileIndex] = useState(0)
   const [bottomNav, setBottomNav] = useState<(typeof BOTTOM_NAV_ITEMS)[number]>(BOTTOM_NAV_ITEMS[0])
+  const [deferredModulesReady, setDeferredModulesReady] = useState(false)
   const [isLocating, setIsLocating] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [queryPressing, setQueryPressing] = useState(false)
@@ -88,6 +91,16 @@ export default function QueryPage() {
   useEffect(() => {
     syncSearchDateRange()
   }, [syncSearchDateRange])
+
+  useEffect(() => {
+    const mountTimer = setTimeout(() => {
+      setDeferredModulesReady(true)
+    }, 120)
+
+    return () => {
+      clearTimeout(mountTimer)
+    }
+  }, [])
 
   useEffect(() => {
     patchSearchDraft({
@@ -269,23 +282,35 @@ export default function QueryPage() {
             }}
           />
 
-          <OperationPanel
-            coupon={COUPON_CONTENT}
-            quickEntries={QUICK_ENTRIES}
-            onCouponClick={() => Taro.showToast({ title: '优惠券已发放到账户', icon: 'none' })}
-            onQuickEntryClick={(entryItem) => Taro.showToast({ title: `${entryItem.title}建设中`, icon: 'none' })}
-          />
+          {deferredModulesReady ? (
+            <Suspense fallback={<View className='query-deferred-skeleton query-deferred-skeleton--panel' />}>
+              <DeferredOperationPanel
+                coupon={COUPON_CONTENT}
+                quickEntries={QUICK_ENTRIES}
+                onCouponClick={() => Taro.showToast({ title: '优惠券已发放到账户', icon: 'none' })}
+                onQuickEntryClick={(entryItem) => Taro.showToast({ title: `${entryItem.title}建设中`, icon: 'none' })}
+              />
+            </Suspense>
+          ) : (
+            <View className='query-deferred-skeleton query-deferred-skeleton--panel' />
+          )}
         </View>
       </ScrollView>
 
-      <BottomNav
-        tabs={BOTTOM_NAV_ITEMS}
-        activeTab={bottomNav}
-        onTabChange={(tab) => {
-          setBottomNav(tab as (typeof BOTTOM_NAV_ITEMS)[number])
-          Taro.showToast({ title: `${tab}频道`, icon: 'none' })
-        }}
-      />
+      {deferredModulesReady ? (
+        <Suspense fallback={<View className='query-bottom-nav-skeleton' />}>
+          <DeferredBottomNav
+            tabs={BOTTOM_NAV_ITEMS}
+            activeTab={bottomNav}
+            onTabChange={(tab) => {
+              setBottomNav(tab as (typeof BOTTOM_NAV_ITEMS)[number])
+              Taro.showToast({ title: `${tab}频道`, icon: 'none' })
+            }}
+          />
+        </Suspense>
+      ) : (
+        <View className='query-bottom-nav-skeleton' />
+      )}
     </View>
   )
 }

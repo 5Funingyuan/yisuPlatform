@@ -1,4 +1,5 @@
 import { Button } from 'antd'
+import 'antd/dist/reset.css'
 import './style.scss'
 
 export interface AdaptivePrimaryButtonProps {

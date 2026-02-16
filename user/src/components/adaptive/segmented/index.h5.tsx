@@ -1,4 +1,5 @@
 import { Segmented } from 'antd'
+import 'antd/dist/reset.css'
 import './style.scss'
 
 export interface AdaptiveSegmentedProps {

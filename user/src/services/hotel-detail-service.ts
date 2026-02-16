@@ -1,5 +1,5 @@
 import type { PriceOption } from '../shared/search-options'
-import { getHotelDetailById, type HotelDetailData, type HotelRoomPlan } from '../pages/detail/mock'
+import type { HotelDetailData, HotelRoomPlan } from '../pages/detail/mock'
 
 export interface HotelRoomFilter {
   priceBucket: PriceOption
@@ -12,6 +12,18 @@ export interface DetailPagePayload {
   hotel: HotelDetailData
   roomPlans: HotelRoomPlan[]
   priceUpdateHint: string
+}
+
+type HotelDetailMockModule = typeof import('../pages/detail/mock')
+
+let hotelDetailMockPromise: Promise<HotelDetailMockModule> | null = null
+
+const loadHotelDetailMockModule = async () => {
+  if (!hotelDetailMockPromise) {
+    hotelDetailMockPromise = import('../pages/detail/mock')
+  }
+
+  return hotelDetailMockPromise
 }
 
 const sleep = (ms: number) =>
@@ -79,9 +91,11 @@ const buildPriceHint = () => {
 export const fetchHotelDetailPayload = async (
   hotelId: string,
   filter: HotelRoomFilter,
+  listItemId?: string,
 ): Promise<DetailPagePayload> => {
   await sleep(460)
-  const hotel = getHotelDetailById(hotelId)
+  const hotelDetailMock = await loadHotelDetailMockModule()
+  const hotel = hotelDetailMock.getHotelDetailById(hotelId, listItemId)
   const filteredRoomPlans = hotel.roomPlans.filter((plan) => shouldKeepPlan(plan, filter))
 
   return {
@@ -94,9 +108,11 @@ export const fetchHotelDetailPayload = async (
 export const refreshHotelRoomPrices = async (
   hotelId: string,
   filter: HotelRoomFilter,
+  listItemId?: string,
 ): Promise<DetailPagePayload> => {
   await sleep(420)
-  const hotel = getHotelDetailById(hotelId)
+  const hotelDetailMock = await loadHotelDetailMockModule()
+  const hotel = hotelDetailMock.getHotelDetailById(hotelId, listItemId)
   const refreshedPlans = hotel.roomPlans.map((plan) => withPriceNoise(plan))
   const filteredRoomPlans = refreshedPlans.filter((plan) => shouldKeepPlan(plan, filter))
 
