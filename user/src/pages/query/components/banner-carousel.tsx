@@ -3,7 +3,7 @@ import type { MarketingBannerItem } from '../entry-mock'
 
 interface BannerCarouselProps {
   items: MarketingBannerItem[]
-  onActionClick: (item: MarketingBannerItem) => void
+  onActionClick: () => void
 }
 
 export default function BannerCarousel({ items, onActionClick }: BannerCarouselProps) {
@@ -21,7 +21,7 @@ export default function BannerCarousel({ items, onActionClick }: BannerCarouselP
       >
         {items.map((item) => (
           <SwiperItem key={item.id}>
-            <View className='query-banner-item'>
+            <View className='query-banner-item' onClick={onActionClick}>
               <Image src={item.imageUrl} mode='aspectFill' className='query-banner-image' lazyLoad />
               <View className='query-banner-mask' />
 
@@ -29,10 +29,7 @@ export default function BannerCarousel({ items, onActionClick }: BannerCarouselP
                 <View className='query-banner-main'>
                   <Text className='query-banner-title'>{item.title}</Text>
                   <Text className='query-banner-subtitle'>{item.subtitle}</Text>
-                  <View
-                    className='query-banner-cta'
-                    onClick={() => onActionClick(item)}
-                  >
+                  <View className='query-banner-cta'>
                     <Text className='query-banner-cta-text'>{item.ctaText}</Text>
                   </View>
                 </View>

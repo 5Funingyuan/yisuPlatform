@@ -15,14 +15,9 @@ interface SearchFormCardProps {
   onKeywordConfirm: () => void
   locating: boolean
   onLocate: () => void
-  today: string
-  checkInDate: string
-  checkOutDate: string
-  checkOutStartDate: string
-  onCheckInChange: (date: string) => void
-  onCheckOutChange: (date: string) => void
   checkInText: string
   checkOutText: string
+  onOpenDateCalendar: () => void
   stayNights: number
   roomSummary: string
   filterSummary: string
@@ -79,14 +74,9 @@ export default function SearchFormCard({
   onKeywordConfirm,
   locating,
   onLocate,
-  today,
-  checkInDate,
-  checkOutDate,
-  checkOutStartDate,
-  onCheckInChange,
-  onCheckOutChange,
   checkInText,
   checkOutText,
+  onOpenDateCalendar,
   stayNights,
   roomSummary,
   filterSummary,
@@ -99,6 +89,7 @@ export default function SearchFormCard({
   onFilterEntryClick,
 }: SearchFormCardProps) {
   const activeTabIndex = Math.max(0, scenes.indexOf(activeScene))
+  const cityPickerIndex = Math.max(0, cityOptions.indexOf(cityValue))
   const checkInParts = splitDateText(checkInText)
   const checkOutParts = splitDateText(checkOutText)
 
@@ -127,6 +118,7 @@ export default function SearchFormCard({
           <Picker
             mode='selector'
             range={[...cityOptions]}
+            value={cityPickerIndex}
             onChange={(event) => {
               const optionIndex = Number(event.detail.value)
               const selectedCity = cityOptions[optionIndex] || cityValue
@@ -181,12 +173,16 @@ export default function SearchFormCard({
 
         <View className='query-row-divider' />
 
-        <View className={`query-merged-row query-merged-row--date ${focusClassName(activeField === 'date')}`} onClick={() => onFieldFocus('date')}>
+        <View
+          className={`query-merged-row query-merged-row--date ${focusClassName(activeField === 'date')}`}
+          onClick={() => {
+            onFieldFocus('date')
+            onOpenDateCalendar()
+          }}
+        >
           <View className='query-date-col'>
             <Text className='query-row-kicker'>入住</Text>
-            <Picker mode='date' value={checkInDate} start={today} onChange={(event) => onCheckInChange(event.detail.value)}>
-              <Text className='query-date-main'>{checkInParts.primary}</Text>
-            </Picker>
+            <Text className='query-date-main'>{checkInParts.primary}</Text>
             <Text className='query-date-sub'>{checkInParts.secondary}</Text>
           </View>
 
@@ -194,9 +190,7 @@ export default function SearchFormCard({
 
           <View className='query-date-col'>
             <Text className='query-row-kicker'>离店</Text>
-            <Picker mode='date' value={checkOutDate} start={checkOutStartDate} onChange={(event) => onCheckOutChange(event.detail.value)}>
-              <Text className='query-date-main'>{checkOutParts.primary}</Text>
-            </Picker>
+            <Text className='query-date-main'>{checkOutParts.primary}</Text>
             <Text className='query-date-sub'>{checkOutParts.secondary}</Text>
           </View>
 

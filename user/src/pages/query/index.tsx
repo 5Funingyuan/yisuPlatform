@@ -1,6 +1,6 @@
-import { ScrollView, View } from '@tarojs/components'
+import { View } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { addDays, getStayNights, getToday, isDateRangeValid, normalizeDateRange, parseYmd } from '../../shared/date'
 import { buildQueryString } from '../../shared/route'
 import { buildDetailUrl } from '../../shared/search-context'
@@ -15,6 +15,7 @@ import {
   ROOM_PROFILES,
 } from './entry-mock'
 import BannerCarousel from './components/banner-carousel'
+import DateRangeCalendar from './components/date-range-calendar'
 import SearchFormCard, { type SearchFieldKey } from './components/search-form-card'
 import './style.scss'
 
@@ -23,6 +24,7 @@ const DeferredOperationPanel = lazy(() =>
   import(/* webpackChunkName: "query-operation-panel" */ './components/operation-panel'),
 )
 const DeferredBottomNav = lazy(() => import(/* webpackChunkName: "query-bottom-nav" */ './components/bottom-nav'))
+const QUERY_BANNER_TARGET_HOTEL_ID = 'h-001'
 
 const formatDateLabel = (dateValue: string, todayValue: string) => {
   const parsedDate = parseYmd(dateValue)
@@ -46,12 +48,23 @@ const formatDateLabel = (dateValue: string, todayValue: string) => {
   return `${weekText} ${month}/${day}`
 }
 
+const normalizeDraftCity = (cityValue: string) => {
+  const normalizedCity = cityValue.trim().replace(/市$/, '')
+
+  if (CITY_OPTIONS.includes(normalizedCity as (typeof CITY_OPTIONS)[number])) {
+    return normalizedCity
+  }
+
+  return CITY_OPTIONS[0]
+}
+
 export default function QueryPage() {
   const persistedScene = useSearchDraftStore((state) => state.scene)
   const persistedKeyword = useSearchDraftStore((state) => state.keyword)
   const persistedLocationName = useSearchDraftStore((state) => state.locationName)
   const persistedStar = useSearchDraftStore((state) => state.selectedStar)
   const persistedPrice = useSearchDraftStore((state) => state.selectedPrice)
+  const persistedTags = useSearchDraftStore((state) => state.selectedTags)
   const persistedCheckInDate = useSearchDraftStore((state) => state.checkInDate)
   const persistedCheckOutDate = useSearchDraftStore((state) => state.checkOutDate)
   const patchSearchDraft = useSearchDraftStore((state) => state.patchDraft)
@@ -63,9 +76,7 @@ export default function QueryPage() {
     persistedCheckOutDate || addDays(initialToday, 1),
     initialToday,
   )
-  const defaultCity = CITY_OPTIONS.includes(persistedLocationName as (typeof CITY_OPTIONS)[number])
-    ? persistedLocationName
-    : CITY_OPTIONS[0]
+  const defaultCity = normalizeDraftCity(persistedLocationName)
 
   const [today, setToday] = useState(initialToday)
   const [activeScene, setActiveScene] = useState<(typeof SCENE_OPTIONS)[number]>(persistedScene)
@@ -80,11 +91,12 @@ export default function QueryPage() {
   const [isLocating, setIsLocating] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [queryPressing, setQueryPressing] = useState(false)
+  const [calendarVisible, setCalendarVisible] = useState(false)
 
   const stayNights = getStayNights(checkInDate, checkOutDate)
   const roomProfile = ROOM_PROFILES[roomProfileIndex % ROOM_PROFILES.length]
   const roomSummary = `${roomProfile.rooms}间房 · ${roomProfile.adults}成人${roomProfile.children > 0 ? ` ${roomProfile.children}儿童` : ''}`
-  const filterSummary = `${persistedPrice}/${persistedStar}`
+  const filterSummary = `${persistedPrice}/${persistedStar}${persistedTags.length > 0 ? ` · ${persistedTags.length}标签` : ''}`
   const checkInText = formatDateLabel(checkInDate, today)
   const checkOutText = formatDateLabel(checkOutDate, today)
 
@@ -109,19 +121,8 @@ export default function QueryPage() {
       locationName: cityValue,
       checkInDate,
       checkOutDate,
-      selectedStar: persistedStar,
-      selectedPrice: persistedPrice,
     })
-  }, [
-    activeScene,
-    checkInDate,
-    checkOutDate,
-    cityValue,
-    keyword,
-    patchSearchDraft,
-    persistedPrice,
-    persistedStar,
-  ])
+  }, [activeScene, checkInDate, checkOutDate, cityValue, keyword, patchSearchDraft])
 
   const updateDateRange = (nextCheckInDate: string, nextCheckOutDate: string) => {
     const latestToday = getToday()
@@ -176,6 +177,7 @@ export default function QueryPage() {
       checkOut: normalizedRange.checkOutDate,
       star: persistedStar,
       price: persistedPrice,
+      tags: persistedTags.length > 0 ? persistedTags.join(',') : undefined,
     })
 
     setIsSearching(true)
@@ -188,9 +190,9 @@ export default function QueryPage() {
     }
   }
 
-  const openBannerTarget = async (bannerHotelId: string) => {
+  const openBannerTarget = async () => {
     const detailUrl = buildDetailUrl({
-      id: bannerHotelId,
+      id: QUERY_BANNER_TARGET_HOTEL_ID,
       source: 'query',
       checkIn: checkInDate,
       checkOut: checkOutDate,
@@ -208,19 +210,27 @@ export default function QueryPage() {
     setRoomProfileIndex((previousIndex) => (previousIndex + 1) % ROOM_PROFILES.length)
   }
 
-  const checkOutStartDate = useMemo(() => addDays(checkInDate, 1), [checkInDate])
+  const openDateCalendar = () => {
+    const latestToday = getToday()
+    const normalizedRange = normalizeDateRange(checkInDate, checkOutDate, latestToday)
+    setToday(latestToday)
+    setCheckInDate(normalizedRange.checkInDate)
+    setCheckOutDate(normalizedRange.checkOutDate)
+    setActiveField('date')
+    setCalendarVisible(true)
+  }
 
   return (
     <View className='query-page'>
-      <ScrollView className='query-scroll safe-bottom' scrollY>
+      <View className='query-scroll'>
         <View className='query-main'>
           <View className='query-bg-blob query-bg-blob--warm' />
           <View className='query-bg-blob query-bg-blob--cold' />
 
           <BannerCarousel
             items={MARKETING_BANNERS}
-            onActionClick={(bannerItem) => {
-              void openBannerTarget(bannerItem.hotelId)
+            onActionClick={() => {
+              void openBannerTarget()
             }}
           />
 
@@ -241,20 +251,9 @@ export default function QueryPage() {
             onLocate={() => {
               void handleLocate()
             }}
-            today={today}
-            checkInDate={checkInDate}
-            checkOutDate={checkOutDate}
-            checkOutStartDate={checkOutStartDate}
-            onCheckInChange={(nextDate) => {
-              setActiveField('date')
-              updateDateRange(nextDate, checkOutDate)
-            }}
-            onCheckOutChange={(nextDate) => {
-              setActiveField('date')
-              updateDateRange(checkInDate, nextDate)
-            }}
             checkInText={checkInText}
             checkOutText={checkOutText}
+            onOpenDateCalendar={openDateCalendar}
             stayNights={stayNights}
             roomSummary={roomSummary}
             filterSummary={filterSummary}
@@ -294,23 +293,35 @@ export default function QueryPage() {
           ) : (
             <View className='query-deferred-skeleton query-deferred-skeleton--panel' />
           )}
-        </View>
-      </ScrollView>
 
-      {deferredModulesReady ? (
-        <Suspense fallback={<View className='query-bottom-nav-skeleton' />}>
-          <DeferredBottomNav
-            tabs={BOTTOM_NAV_ITEMS}
-            activeTab={bottomNav}
-            onTabChange={(tab) => {
-              setBottomNav(tab as (typeof BOTTOM_NAV_ITEMS)[number])
-              Taro.showToast({ title: `${tab}频道`, icon: 'none' })
-            }}
-          />
-        </Suspense>
-      ) : (
-        <View className='query-bottom-nav-skeleton' />
-      )}
+          {deferredModulesReady ? (
+            <Suspense fallback={<View className='query-bottom-nav-skeleton' />}>
+              <DeferredBottomNav
+                tabs={BOTTOM_NAV_ITEMS}
+                activeTab={bottomNav}
+                onTabChange={(tab) => {
+                  setBottomNav(tab as (typeof BOTTOM_NAV_ITEMS)[number])
+                  Taro.showToast({ title: `${tab}频道`, icon: 'none' })
+                }}
+              />
+            </Suspense>
+          ) : (
+            <View className='query-bottom-nav-skeleton' />
+          )}
+        </View>
+      </View>
+
+      <DateRangeCalendar
+        visible={calendarVisible}
+        minDate={today}
+        initialCheckInDate={checkInDate}
+        initialCheckOutDate={checkOutDate}
+        onClose={() => setCalendarVisible(false)}
+        onConfirm={(nextCheckInDate, nextCheckOutDate) => {
+          updateDateRange(nextCheckInDate, nextCheckOutDate)
+          setCalendarVisible(false)
+        }}
+      />
     </View>
   )
 }
