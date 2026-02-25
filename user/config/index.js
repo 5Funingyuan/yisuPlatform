@@ -1,3 +1,11 @@
+const taroEnv = process.env.TARO_ENV
+const outputRoot =
+  taroEnv === 'weapp'
+    ? 'dist/weapp'
+    : taroEnv === 'h5'
+      ? 'dist/h5'
+      : 'dist'
+
 const config = {
   projectName: 'yisuPlatform',
   date: '2026-02-09',
@@ -8,7 +16,7 @@ const config = {
     828: 1.81 / 2,
   },
   sourceRoot: 'src',
-  outputRoot: 'dist',
+  outputRoot,
   plugins: ['@tarojs/plugin-framework-react'],
   defineConstants: {},
   copy: {

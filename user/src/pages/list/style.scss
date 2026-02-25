@@ -51,15 +51,24 @@
 }
 
 .hotel-search-top {
+  --hotel-pill-height: 44px;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: 8px;
 }
 
+.hotel-city-picker {
+  height: var(--hotel-pill-height);
+  display: flex;
+  align-items: center;
+}
+
 .hotel-city-pill {
   min-width: 76px;
-  height: 44px;
+  height: var(--hotel-pill-height);
+  position: relative;
+  top: -9rpx;
   border-radius: 999px;
   background: #f2f6fb;
   display: inline-flex;
@@ -83,7 +92,7 @@
 }
 
 .hotel-date-room-pill {
-  height: 44px;
+  height: var(--hotel-pill-height);
   border-radius: 999px;
   background: #f2f6fb;
   display: flex;
@@ -94,6 +103,8 @@
 }
 
 .hotel-date-item {
+  position: relative;
+  top: -11rpx;
   font-size: 13px;
   font-weight: 700;
   color: #0f172a;
@@ -249,9 +260,26 @@
   height: 44px;
   width: 100%;
   border-top: 1px solid #f1f5f9;
+  overflow: hidden;
+
+  .taro-scroll-view__scroll-x {
+    height: 100%;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .taro-scroll-view__scroll-x::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
 }
 
 .hotel-quick-list {
+  position: relative;
+  top: -15rpx;
   padding: 7px 10px;
   display: inline-flex;
   align-items: center;
@@ -292,6 +320,143 @@
 .hotel-quick-reset {
   border-color: #e5e7eb;
   background: #ffffff;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-search-panel {
+  padding: 13px 16px 16px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-search-top {
+  --hotel-pill-height: 57px;
+  gap: 10px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-city-pill {
+  min-width: 99px;
+  gap: 7px;
+  padding: 0 16px;
+  top: -12rpx;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-city-pill-text {
+  font-size: 18px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-city-pill-arrow {
+  font-size: 13px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-date-room-pill {
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-date-item {
+  top: -14rpx;
+  font-size: 17px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-date-sep,
+.hotel-list-page.is-four-card-mode .hotel-date-night,
+.hotel-list-page.is-four-card-mode .hotel-date-room {
+  font-size: 16px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-keyword-bar {
+  margin-top: 10px;
+  height: 57px;
+  gap: 10px;
+  padding: 0 16px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-keyword-input {
+  font-size: 18px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-keyword-action {
+  min-width: 68px;
+  height: 36px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-keyword-action-text {
+  font-size: 16px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-search-summary {
+  margin-top: 10px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-search-summary-text {
+  font-size: 16px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-search-result-text {
+  font-size: 17px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-sort-row {
+  height: 57px;
+  padding: 0 8px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-sort-text {
+  font-size: 17px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-sort-arrow {
+  font-size: 14px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-sort-count {
+  right: 8px;
+  top: -4px;
+  min-width: 18px;
+  height: 18px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-sort-count text {
+  font-size: 13px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-quick-scroll {
+  height: 57px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-quick-list {
+  top: -20rpx;
+  padding: 9px 13px;
+  gap: 10px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-quick-chip,
+.hotel-list-page.is-four-card-mode .hotel-quick-reset {
+  height: 39px;
+  padding: 0 16px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-quick-chip text,
+.hotel-list-page.is-four-card-mode .hotel-quick-reset text {
+  font-size: 16px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-list-content {
+  padding: 12px 10px 0;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-skeleton-list {
+  gap: 10px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-card {
+  min-height: 156px;
+  gap: 12px;
+  padding: 12px;
+}
+
+.hotel-list-page.is-four-card-mode .hotel-card-cover {
+  width: 126px;
+  height: 156px;
+  border-radius: 12px;
 }
 
 .hotel-list-content {

@@ -162,8 +162,29 @@ export default function HotelListPage() {
   const [pageError, setPageError] = useState('')
   const [loadMoreError, setLoadMoreError] = useState('')
   const fetchTokenRef = useRef(0)
+  const isFourCardMode = useMemo(() => {
+    try {
+      const systemInfo = Taro.getSystemInfoSync()
+      const screenWidth = Number(systemInfo.screenWidth || 0)
+      const screenHeight = Number(systemInfo.screenHeight || 0)
+      const windowWidth = Number(systemInfo.windowWidth || screenWidth || 0)
+      const windowHeight = Number(systemInfo.windowHeight || screenHeight || 0)
+      const isH5 = Taro.getEnv() === Taro.ENV_TYPE.WEB
+
+      if (isH5) {
+        return windowWidth >= 360 && windowWidth <= 430 && windowHeight >= 640
+      }
+
+      return screenWidth >= 384 && screenWidth <= 396 && screenHeight >= 834 && screenHeight <= 854
+    } catch {
+      return false
+    }
+  }, [])
+  const pageClassName = isFourCardMode ? 'hotel-list-page is-four-card-mode' : 'hotel-list-page'
 
   const cityTitle = useMemo(() => normalizeCityTitle(searchConditions.city), [searchConditions.city])
+  const cityOptionValue = cityTitle.replace(/市$/, '')
+  const cityPickerIndex = Math.max(0, CITY_OPTIONS.indexOf(cityOptionValue as (typeof CITY_OPTIONS)[number]))
   const stayNights = getStayNights(searchConditions.checkInDate, searchConditions.checkOutDate)
   const quickFilterOptions = useMemo(() => buildQuickFilterOptions(cityTitle), [cityTitle])
   const quickFilterSignature = quickFilterOptions.join('|')
@@ -253,7 +274,7 @@ export default function HotelListPage() {
     patchSearchDraft({
       scene: searchConditions.scene,
       keyword: searchConditions.keyword,
-      locationName: cityTitle,
+      locationName: cityTitle.replace(/市$/, ''),
       selectedStar,
       selectedPrice,
       selectedTags,
@@ -487,7 +508,7 @@ export default function HotelListPage() {
   )
 
   return (
-    <View className='hotel-list-page'>
+    <View className={pageClassName}>
       <View className='hotel-top-nav'>
         <View className='hotel-nav-back' onClick={() => void handleBackToQuery()}>
           <LiteIcon value='chevron-left' size='18' color='#0f172a' />
@@ -498,9 +519,9 @@ export default function HotelListPage() {
 
       <View className='hotel-search-panel'>
         <View className='hotel-search-top'>
-          <Picker mode='selector' range={[...CITY_OPTIONS]} onChange={handleCityChange}>
+          <Picker className='hotel-city-picker' mode='selector' range={[...CITY_OPTIONS]} value={cityPickerIndex} onChange={handleCityChange}>
             <View className='hotel-city-pill'>
-              <Text className='hotel-city-pill-text'>{cityTitle.replace(/市$/, '')}</Text>
+              <Text className='hotel-city-pill-text'>{cityOptionValue}</Text>
               <Text className='hotel-city-pill-arrow'>▼</Text>
             </View>
           </Picker>
@@ -573,7 +594,7 @@ export default function HotelListPage() {
           })}
         </View>
 
-        <ScrollView className='hotel-quick-scroll' scrollX showScrollbar={false}>
+        <ScrollView className='hotel-quick-scroll' scrollX={true} enhanced={true} showScrollbar={false}>
           <View className='hotel-quick-list'>
             {quickFilterOptions.map((quickFilter) => (
               <View

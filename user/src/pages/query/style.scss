@@ -1,10 +1,12 @@
 .query-page {
   min-height: 100vh;
+  width: 100%;
+  margin: 0;
   background: linear-gradient(180deg, #deecff 0%, #eff6ff 45%, #f1f5f9 100%);
 }
 
 .query-scroll {
-  height: 100vh;
+  width: 100%;
 }
 
 .query-main {
@@ -636,20 +638,25 @@
 }
 
 .query-bottom-nav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 50;
-  border-top: 1px solid rgba(226, 232, 240, 0.85);
+  position: relative;
+  z-index: 2;
+  margin: 5px 16px 0;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   padding: 8px 8px calc(env(safe-area-inset-bottom) + 6px);
 }
 
+@supports not ((backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px))) {
+  .query-bottom-nav {
+    background: #ffffff;
+  }
+}
+
 .query-bottom-nav-grid {
-  margin: 0 auto;
-  max-width: 560px;
+  margin: 0;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 4px;
@@ -693,15 +700,14 @@
 }
 
 .query-bottom-nav-skeleton {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 50;
+  position: relative;
+  z-index: 2;
+  margin: 5px 16px 0;
   height: calc(56px + env(safe-area-inset-bottom));
+  border-radius: 16px;
   background: linear-gradient(90deg, rgba(229, 236, 246, 0.95) 20%, rgba(244, 247, 252, 0.95) 50%, rgba(229, 236, 246, 0.95) 80%);
   background-size: 220% 100%;
-  border-top: 1px solid rgba(226, 232, 240, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.85);
   animation: query-skeleton-shimmer 1.2s infinite;
 }
 
@@ -715,9 +721,10 @@
   }
 }
 
-@media (min-width: 640px) {
-  .query-main {
-    max-width: 560px;
+@media screen and (min-width: 768px) {
+  .query-page {
+    width: 92vw;
+    max-width: 640px;
     margin: 0 auto;
   }
 }

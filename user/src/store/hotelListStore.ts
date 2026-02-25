@@ -11,9 +11,10 @@ import {
   type SceneOption,
   type StarOption,
 } from '../shared/search-options'
-import type { HotelListItem, HotelSortType } from '../services/hotel-list-service'
+import type { HotelSortType } from '../services/hotel-list-service'
+import type { HotelListItem } from '../pages/list/mock'
 
-const STORAGE_KEY = 'yisu-user-hotel-list-v4'
+const STORAGE_KEY = 'yisu-user-hotel-list-v6'
 const DEFAULT_PAGE_SIZE = 10
 
 export interface HotelSearchConditions {
@@ -92,6 +93,22 @@ const sanitizeTags = (tags: string[]) =>
 
 const sanitizeQuickFilters = (selectedFilters: string[], availableFilters: string[]) =>
   unique(selectedFilters.filter((filterValue) => availableFilters.includes(filterValue)))
+
+const dedupeHotelItems = (items: HotelListItem[]) => {
+  const seenItemIds = new Set<string>()
+  const normalizedItems: HotelListItem[] = []
+
+  items.forEach((item) => {
+    if (seenItemIds.has(item.itemId)) {
+      return
+    }
+
+    seenItemIds.add(item.itemId)
+    normalizedItems.push(item)
+  })
+
+  return normalizedItems
+}
 
 const createDefaultSnapshot = (): HotelListSnapshot => {
   const today = getToday()
@@ -339,8 +356,9 @@ export const useHotelListStore = create<HotelListStore>()(
       },
 
       replaceCache: ({ queryKey, list, total, pageNo, pageSize, hasMore }) => {
+        const normalizedList = dedupeHotelItems(list)
         set(() => ({
-          cachedItems: list,
+          cachedItems: normalizedList,
           total,
           pageNo,
           pageSize,
@@ -352,8 +370,9 @@ export const useHotelListStore = create<HotelListStore>()(
 
       appendCache: ({ queryKey, list, total, pageNo, pageSize, hasMore }) => {
         set((state) => {
-          const mergedItems =
+          const mergedItems = dedupeHotelItems(
             state.cacheQueryKey === queryKey ? [...state.cachedItems, ...list] : list
+          )
 
           return {
             ...state,
