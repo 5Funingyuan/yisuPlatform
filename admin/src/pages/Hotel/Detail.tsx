@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { 
-  Card, Descriptions, Tabs, Button, Space, Tag, 
+  Card, Descriptions, Button, Space, Tag, 
   message, Modal, Table, Popconfirm, Input, Select,
   Form, InputNumber
 } from 'antd'
@@ -9,16 +9,11 @@ import {
   ArrowLeftOutlined, 
   EditOutlined, 
   DeleteOutlined,
-  PlusOutlined,
-  SaveOutlined,
-  CloseOutlined,
-  CheckCircleOutlined,
-  StopOutlined
+  PlusOutlined
 } from '@ant-design/icons'
-import { getHotelDetail, updateHotel, submitHotelForReview, Hotel, HotelStatus } from '@/api/hotel'
-import { getRoomsByHotel, createRoom, updateRoom, deleteRoom, Room, CreateRoomParams } from '@/api/room'
+import { getHotelDetail, submitHotelForReview, Hotel, HotelStatus } from '@/api/hotel'
+import { getRoomsByHotel, createRoom, updateRoom, deleteRoom, Room } from '@/api/room'
 
-const { TabPane } = Tabs
 const { Option } = Select
 
 

@@ -41,6 +41,54 @@ export interface HotelListResult {
   total: number
 }
 
+const normalizeHotelListResult = (payload: unknown): HotelListResult => {
+  if (Array.isArray(payload)) {
+    return {
+      success: true,
+      data: payload as Hotel[],
+      total: payload.length,
+    }
+  }
+
+  if (payload && typeof payload === 'object') {
+    const recordPayload = payload as Record<string, unknown>
+
+    if (Array.isArray(recordPayload.list)) {
+      return {
+        success: true,
+        data: recordPayload.list as Hotel[],
+        total: Number(recordPayload.total ?? recordPayload.list.length ?? 0),
+      }
+    }
+
+    if (Array.isArray(recordPayload.data)) {
+      return {
+        success: true,
+        data: recordPayload.data as Hotel[],
+        total: Number(recordPayload.total ?? recordPayload.data.length ?? 0),
+      }
+    }
+
+    if (recordPayload.data && typeof recordPayload.data === 'object') {
+      const nestedData = recordPayload.data as Record<string, unknown>
+
+      if (Array.isArray(nestedData.list)) {
+        return {
+          success: true,
+          data: nestedData.list as Hotel[],
+          total: Number(recordPayload.total ?? nestedData.total ?? nestedData.list.length ?? 0),
+        }
+      }
+    }
+  }
+
+  return {
+    success: true,
+    data: [],
+    total: 0,
+  }
+}
+
 // 创建酒店参数
 export interface CreateHotelParams {
   name: string
@@ -62,8 +110,7 @@ export interface UpdateHotelParams extends Partial<CreateHotelParams> {}
 // 获取酒店列表（公开）
 export const getHotelList = async (params?: HotelListParams) => {
   const response = await request.get('/hotels', { params })
-  console.log('API原始响应:', response) // 添加日志查看原始数据
-  return response
+  return normalizeHotelListResult(response)
 }
 
 // 获取酒店详情（公开）
@@ -114,11 +161,10 @@ export const offlineHotel = (id: number) => {
 
 // 获取我的酒店（当前用户创建的所有酒店）
 export const getMyHotels = (params?: HotelListParams) => {
-  return request.get<{ data: Hotel[] }>('/hotels/my/list', { params })
+  return request.get('/hotels/my/list', { params }).then(normalizeHotelListResult)
 }
 
 // 获取所有酒店（管理员专用）
 export const getAdminHotelList = () => {
-  return request.get<{ data: Hotel[] }>('/admin/hotels')
+  return request.get('/admin/hotels').then(normalizeHotelListResult)
 }
-

@@ -5,6 +5,13 @@ module.exports = {
   },
   h5: {
     devServer: {
+      hot: false,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+        },
+      },
       client: {
         overlay: {
           errors: true,

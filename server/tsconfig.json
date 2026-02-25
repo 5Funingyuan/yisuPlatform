@@ -10,12 +10,12 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
+    "declaration": false,
+    "declarationMap": false,
     "sourceMap": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
   },
-  "include": ["src/**/*", "src/main.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/main.ts", "src/user-mock-service.ts", "src/entity-data-service.ts"],
+  "exclude": ["node_modules", "dist", "src/api/**/*", "src/modules/**/*"]
 }
