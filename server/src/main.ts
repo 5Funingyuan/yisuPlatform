@@ -18,7 +18,14 @@ const users = [
     username: 'admin',
     passwordHash: '$2a$10$N9qo8uLOickgx2ZMRZoMye8biJ5n6.6qU8t7QjY5Jp7B4Q7F8jK9S', // admin123
     role: 'ADMIN'
-  }
+  },
+    // 添加一个测试管理员
+  {
+    id: 2,
+    username: 'testadmin',
+    passwordHash: bcrypt.hashSync('123456', 10), // 你需要计算hash
+    role: 'ADMIN'
+  },
 ];
 
 const hotels = [
@@ -320,7 +327,7 @@ app.post('/api/hotels', authMiddleware, (req, res) => {
       promo,
       coverImage,
       intro,
-      status: 'DRAFT',
+      status: 'PENDING',
       ownerId: req.user.uid,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -349,6 +356,26 @@ app.get('/api/hotels/:id/rooms', (req, res) => {
     success: true,
     data: hotelRooms
   });
+});
+
+// 获取我的酒店（当前登录用户创建的酒店）
+app.get('/api/hotels/my/list', authMiddleware, (req, res) => {
+  try {
+    // 从 token 中获取用户ID
+    const userId = req.user.uid;
+    
+    // 过滤出当前用户创建的酒店
+    const myHotels = hotels.filter(hotel => hotel.ownerId === userId);
+    
+    res.json({
+      success: true,
+      data: myHotels,
+      total: myHotels.length
+    });
+  } catch (error) {
+    console.error('获取我的酒店错误:', error);
+    res.status(500).json({ success: false, message: '服务器内部错误' });
+  }
 });
 
 // 10. 添加房型（需要酒店所有者或管理员）

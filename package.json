@@ -2,11 +2,14 @@
   "name": "yisu-platform",
   "version": "0.1.0",
   "private": true,
-  "description": "易宿平台 monorepo（user / server）",
+  "description": "易宿平台 monorepo（user / server / admin）",
   "scripts": {
     "dev:user": "pnpm --filter @yisu/user dev:h5",
     "build:user": "pnpm --filter @yisu/user build:h5",
     "dev:user:weapp": "pnpm --filter @yisu/user dev:weapp",
-    "build:user:weapp": "pnpm --filter @yisu/user build:weapp"
+    "build:user:weapp": "pnpm --filter @yisu/user build:weapp",
+    "dev:admin": "pnpm --filter @yisu/admin dev",
+    "build:admin": "pnpm --filter @yisu/admin build",
+    "preview:admin": "pnpm --filter @yisu/admin preview"
   }
 }
