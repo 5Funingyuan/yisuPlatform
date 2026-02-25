@@ -864,6 +864,21 @@ const cloneRoomPlans = (roomPlans: HotelRoomPlan[]) => roomPlans.map((plan) => (
 
 const uniqueStrings = (values: string[]) => Array.from(new Set(values.filter(Boolean)))
 
+const parseBaseHotelId = (hotelId?: string) => {
+  const normalizedHotelId = hotelId?.trim() || ''
+
+  if (!normalizedHotelId) {
+    return ''
+  }
+
+  const matchedBaseId = normalizedHotelId.match(/h-\d{3}/)
+  if (matchedBaseId) {
+    return matchedBaseId[0]
+  }
+
+  return normalizedHotelId.split('-branch-')[0] || normalizedHotelId
+}
+
 const getListVariant = (hotelId?: string, listItemId?: string) => {
   if (listItemId) {
     const matchedByListItemId = HOTEL_LIST_POOL.find((item) => item.itemId === listItemId)
@@ -881,13 +896,15 @@ const getListVariant = (hotelId?: string, listItemId?: string) => {
 
 export const getHotelDetailById = (hotelId?: string, listItemId?: string): HotelDetailData => {
   const listVariant = getListVariant(hotelId, listItemId)
-  const baseHotelId = listVariant?.hotelId || hotelId
+  const baseHotelId =
+    listVariant?.baseHotelId || parseBaseHotelId(listVariant?.hotelId) || parseBaseHotelId(hotelId) || hotelId
+  const detailHotelId = listVariant?.hotelId || hotelId || baseHotelId
   const baseHotel = hotelCards.find((item) => item.id === baseHotelId) || hotelCards[0]
   const detailRecord = DETAIL_RECORDS[baseHotel.id]
 
   if (!detailRecord) {
     const fallbackDetail: HotelDetailData = {
-      id: baseHotel.id,
+      id: detailHotelId,
       name: baseHotel.name,
       star: baseHotel.star,
       address: baseHotel.address,
@@ -939,7 +956,7 @@ export const getHotelDetailById = (hotelId?: string, listItemId?: string): Hotel
   }
 
   const baseDetail: HotelDetailData = {
-    id: baseHotel.id,
+    id: detailHotelId,
     name: baseHotel.name,
     star: baseHotel.star,
     address: baseHotel.address,

@@ -36,9 +36,10 @@
   top: calc(16px + env(safe-area-inset-top));
   left: 18px;
   right: 18px;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
+  column-gap: 10px;
   z-index: 14;
 }
 
@@ -46,6 +47,31 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.float-title-wrap {
+  min-width: 0;
+  height: 52px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(15, 23, 42, 0.45);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+}
+
+.float-title-text {
+  display: block;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .float-btn {
@@ -57,6 +83,7 @@
   justify-content: center;
   background: rgba(15, 23, 42, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.24);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 
   &.is-active {
@@ -66,6 +93,12 @@
   &.is-disabled {
     opacity: 0.56;
     pointer-events: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px))) {
+  .float-btn {
+    background: rgba(15, 23, 42, 0.68);
   }
 }
 
@@ -142,14 +175,17 @@
 }
 
 .rating-badge {
-  padding: 4px 10px;
+  height: 18px;
+  padding: 0 10px;
   border-radius: 999px;
   background: #1d4ed8;
+  display: inline-flex;
+  align-items: center;
 }
 
 .rating-value {
   color: #ffffff;
-  font-size: 20px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -515,12 +551,6 @@
   font-weight: 800;
 }
 
-.room-price-tip {
-  margin-top: 1px;
-  color: #64748b;
-  font-size: 16px;
-}
-
 .book-btn {
   margin-top: 10px;
   width: 104px;
@@ -649,11 +679,6 @@
   font-size: 32px;
   line-height: 1;
   font-weight: 800;
-}
-
-.booking-tax-tip {
-  color: #64748b;
-  font-size: 16px;
 }
 
 .booking-actions {

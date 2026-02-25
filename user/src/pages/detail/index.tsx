@@ -628,6 +628,10 @@ export default function HotelDetailPage() {
             <LiteIcon value='chevron-left' size='18' color='#ffffff' />
           </View>
 
+          <View className='float-title-wrap'>
+            <Text className='float-title-text'>{hotel?.name || '酒店详情'}</Text>
+          </View>
+
           <View className='float-actions'>
             <View
               className={`float-btn ${favorite ? 'is-active' : ''}`}
@@ -832,7 +836,6 @@ export default function HotelDetailPage() {
                     <View className='room-side'>
                       <Text className='room-original'>¥{roomPlan.originalPrice}</Text>
                       <Text className='room-price'>¥{roomPlan.price}</Text>
-                      <Text className='room-price-tip'>每晚含税</Text>
 
                       <View
                         className={`book-btn ${isSoldOut ? 'is-disabled' : isSelected ? 'is-selected' : ''}`}
@@ -867,7 +870,6 @@ export default function HotelDetailPage() {
             <View className='booking-price-row'>
               <Text className='booking-total-label'>总价</Text>
               <Text className='booking-total-price'>¥{selectedPlanInCurrentHotel.totalPrice}</Text>
-              <Text className='booking-tax-tip'>含税费</Text>
             </View>
           </View>
 

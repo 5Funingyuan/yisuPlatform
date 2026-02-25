@@ -26,7 +26,6 @@ const CITY_GENERATION_PLAN: readonly [city: (typeof CITY_BUCKET)[number], count:
   ['大理市', 17],
 ]
 const BREAKFAST_BUCKET = ['含双早', '含单早', '不含早餐'] as const
-const BRANCH_SUFFIX = ['商务店', '甄选店', '轻奢店', '假日店'] as const
 const ROOM_TYPE_BUCKET = ['双床房', '大床房'] as const
 const BONUS_BUCKET = ['返10倍积分', '返5倍积分', '返30元红包', '返20元红包'] as const
 
@@ -169,6 +168,7 @@ const CITY_PROFILES: Record<(typeof CITY_BUCKET)[number], CityProfile> = {
 export interface HotelListItem extends HotelCard {
   itemId: string
   hotelId: string
+  baseHotelId: string
   city: string
   locationZone: string
   rating: number
@@ -195,9 +195,9 @@ const buildHotelListItem = (
 ): HotelListItem => {
   const variantIndex = Math.floor(localIndex / cityBaseSize)
   const cityProfile = CITY_PROFILES[city]
-  const locationZone = cityProfile.zones[localIndex % cityProfile.zones.length]
-  const distanceText = cityProfile.distances[(localIndex + 1) % cityProfile.distances.length]
-  const detailAddress = cityProfile.addresses[localIndex % cityProfile.addresses.length]
+  const locationZone = cityProfile.zones[variantIndex % cityProfile.zones.length]
+  const distanceText = cityProfile.distances[variantIndex % cityProfile.distances.length]
+  const detailAddress = cityProfile.addresses[variantIndex % cityProfile.addresses.length]
   const priceOffset = ((globalIndex % 9) - 4) * 24
   const reviewCount = 320 + globalIndex * 47
   const collectCount = 680 + globalIndex * 83
@@ -207,7 +207,7 @@ const buildHotelListItem = (
   const breakfast = BREAKFAST_BUCKET[(globalIndex + 2) % BREAKFAST_BUCKET.length]
   const roomType = ROOM_TYPE_BUCKET[globalIndex % ROOM_TYPE_BUCKET.length]
   const bonusTag = BONUS_BUCKET[globalIndex % BONUS_BUCKET.length]
-  const specialDesc = cityProfile.sellingPoints[localIndex % cityProfile.sellingPoints.length]
+  const specialDesc = cityProfile.sellingPoints[variantIndex % cityProfile.sellingPoints.length]
   const normalizedPrice = Math.max(188, baseHotel.price + priceOffset)
   const originalPrice = normalizedPrice + 120 + (globalIndex % 6) * 36
 
@@ -223,16 +223,17 @@ const buildHotelListItem = (
     locationZone.includes('古城') ? '近古城' : '',
   ])
 
-  const branchName = `${city.replace(/市$/, '')}${BRANCH_SUFFIX[globalIndex % BRANCH_SUFFIX.length]}`
+  const branchSequence = Math.max(1, variantIndex)
   const keepOriginalName = variantIndex === 0
-  const normalizedName = keepOriginalName
-    ? baseHotel.name
-    : `${baseHotel.name.replace(/（.*?）/g, '')}（${branchName}）`
+  const uniqueHotelId = keepOriginalName ? baseHotel.id : `${baseHotel.id}-branch-${branchSequence}`
+  const cleanBaseHotelName = baseHotel.name.replace(/（.*?）/g, '').trim()
+  const normalizedName = `${cleanBaseHotelName}（${locationZone}）`
 
   return {
     ...baseHotel,
     itemId: `${city}-${baseHotel.id}-${localIndex}`,
-    hotelId: baseHotel.id,
+    hotelId: uniqueHotelId,
+    baseHotelId: baseHotel.id,
     name: normalizedName,
     city,
     address: `${detailAddress} · ${locationZone}`,
