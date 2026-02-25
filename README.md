@@ -1,11 +1,16 @@
-# 易宿平台 yisuPlatform
+# 易宿酒店预订平台 yisuPlatform
 
-一个基于 `pnpm workspace` 的酒店预订项目，当前包含：
+一个基于 `pnpm workspace` 和 `taro` 的多端酒店预订项目：
 
 - `user`：移动端用户应用（Taro 4 + React 18）
-- `server`：Node.js/Express 接口服务（开发态内存数据）
+- `server`：Node.js/Express 接口服务
 
-当前开发重点在移动端 C 端流程：酒店查询页 -> 酒店列表页 -> 酒店详情页。
+## 页面概览
+
+![h5端酒店查询页]<img width="366" height="558" alt="Image" src="https://github.com/user-attachments/assets/33a5c76d-7091-4ade-8373-19352762cf43" />
+![h5端酒店列表页]<img width="370" height="660" alt="Image" src="https://github.com/user-attachments/assets/3f829b16-b485-4051-8282-4fbfe6cc7952" />
+![h5端酒店详情页]<img width="490" height="911" alt="Image" src="https://github.com/user-attachments/assets/ea663d78-6460-44bf-a0a5-f822b9185185" />
+![微信小程序端酒店查询页]<img width="492" height="961" alt="Image" src="https://github.com/user-attachments/assets/eb4c2b6e-df77-4425-bc5d-f2368110f3cb" />
 
 ## 功能概览
 
@@ -138,25 +143,3 @@ pnpm build:user          # user H5 build
 pnpm dev:user:weapp      # user 微信小程序 watch
 pnpm build:user:weapp    # user 微信小程序 build
 ```
-
-## 接口与数据说明
-
-当前用户端页面为“前端优先”开发模式：
-
-- 列表页、详情页主数据主要来自本地 mock（`user/src/pages/**/mock.ts`）
-- `user/src/services/*` 提供异步调用形态，便于后续无缝替换为真实后端 API
-
-即：页面交互流程完整，可演示；真实生产数据联调仍需继续接入后端。
-
-## 已知注意事项
-
-- 若微信开发者工具报 “根据 miniprogramRoot 找不到 app.json”：
-  - 检查导入目录是否为 `user`
-  - 检查 `user/project.config.json` 的 `miniprogramRoot` 是否为 `dist/weapp/`
-- H5 与小程序存在平台渲染差异，列表页已做移动端尺寸策略以尽量对齐视觉效果
-
-## 后续建议
-
-- 将 `user/src/services` 从 mock 切换到真实 API
-- 补齐登录态、下单链路、异常监控
-- 增加单元测试与端到端回归流程
