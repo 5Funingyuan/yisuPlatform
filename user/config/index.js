@@ -1,4 +1,6 @@
 const taroEnv = process.env.TARO_ENV
+const apiBaseFromEnv = (process.env.TARO_APP_API_BASE || '').trim()
+const weappDevApiBase = (process.env.TARO_APP_WEAPP_DEV_API_BASE || 'http://127.0.0.1:3001/api').trim()
 const outputRoot =
   taroEnv === 'weapp'
     ? 'dist/weapp'
@@ -18,7 +20,10 @@ const config = {
   sourceRoot: 'src',
   outputRoot,
   plugins: ['@tarojs/plugin-framework-react'],
-  defineConstants: {},
+  defineConstants: {
+    __YISU_API_BASE__: JSON.stringify(apiBaseFromEnv),
+    __YISU_WEAPP_DEV_API_BASE__: JSON.stringify(weappDevApiBase),
+  },
   copy: {
     patterns: [],
     options: {},

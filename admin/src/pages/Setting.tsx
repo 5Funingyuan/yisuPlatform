@@ -1,5 +1,5 @@
 import React from 'react'; 
-import { Card, Tabs, Form, Input, Button, Switch } from 'antd'; 
+import { Card, Tabs, Form, Button } from 'antd'; 
  
 const Setting: React.FC = () => { 
   const items = [ 
