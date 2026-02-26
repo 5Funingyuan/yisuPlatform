@@ -9,6 +9,13 @@
 
 ---
 
+## 小程序端
+<img width="858" height="758" alt="Image" src="https://github.com/user-attachments/assets/ebf94097-178f-4cc6-95d1-6d60c1088dbf" />
+
+## h5端
+<img width="1083" height="714" alt="Image" src="https://github.com/user-attachments/assets/019a1734-e7c0-425c-9a1d-0bd58f78175e" />
+
+
 ## 1. 项目目标与价值
 
 易宿平台不是单一前端或后端项目，而是一个完整的多端酒店业务协同系统，目标是打通：
