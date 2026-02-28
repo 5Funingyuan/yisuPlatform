@@ -9,13 +9,6 @@
 
 ---
 
-## 小程序端
-<img width="858" height="758" alt="Image" src="https://github.com/user-attachments/assets/ebf94097-178f-4cc6-95d1-6d60c1088dbf" />
-
-## h5端
-<img width="1083" height="714" alt="Image" src="https://github.com/user-attachments/assets/019a1734-e7c0-425c-9a1d-0bd58f78175e" />
-
-
 ## 1. 项目目标与价值
 
 易宿平台不是单一前端或后端项目，而是一个完整的多端酒店业务协同系统，目标是打通：
@@ -24,6 +17,7 @@
 2. **商家侧经营链路**：酒店创建/编辑 -> 房型管理 -> 提审 -> 上下线
 3. **平台侧治理链路**：管理员审核、状态流转、统一数据视图
 
+核心设计强调：**同源数据、多端消费、最小联调成本、快速迭代可落地**。
 
 ---
 
@@ -56,7 +50,7 @@ admin (Web)       ──┘
 
 | 子项目 | 关键技术 | 说明 |
 | --- | --- | --- |
-| `user` | `Taro 4`、`React 18`、`Sass`、`Zustand` | 一套业务代码流式布局+分层断点，同时覆盖 H5 / 微信小程序；状态持久化与多页共享 |
+| `user` | `Taro 4`、`React 18`、`Sass`、`Zustand` | 一套业务代码覆盖 H5 / 微信小程序；状态持久化与多页共享 |
 | `admin` | `React 18`、`TypeScript`、`Ant Design 5`、`Axios` | 面向运营与审核场景的后台能力 |
 | `server` | `Express 4`、`TypeScript`、`jsonwebtoken`、`bcryptjs` | 认证鉴权、酒店/房型/审核接口、用户端聚合接口 |
 
