@@ -11,9 +11,10 @@ const outputRoot =
 const config = {
   projectName: 'yisuPlatform',
   date: '2026-02-09',
-  designWidth: 750,
+  designWidth: 375,
   deviceRatio: {
     640: 2.34 / 2,
+    375: 2 / 1,
     750: 1,
     828: 1.81 / 2,
   },
@@ -54,6 +55,10 @@ const config = {
     publicPath: '/',
     staticDirectory: 'static',
     postcss: {
+      pxtransform: {
+        enable: true,
+        config: {},
+      },
       autoprefixer: {
         enable: true,
         config: {},

@@ -6,7 +6,7 @@ dist/
 build/
 
 # ===== Tooling cache =====
-.codex
+
 .swc/
 .cache/
 .vite/

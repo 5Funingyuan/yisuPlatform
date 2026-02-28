@@ -1,5 +1,13 @@
 @use './styles/tokens.scss' as *;
 
+html,
+body {
+  margin: 0;
+  padding: 0;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 page,
 view,
 text,

@@ -162,25 +162,7 @@ export default function HotelListPage() {
   const [pageError, setPageError] = useState('')
   const [loadMoreError, setLoadMoreError] = useState('')
   const fetchTokenRef = useRef(0)
-  const isFourCardMode = useMemo(() => {
-    try {
-      const systemInfo = Taro.getSystemInfoSync()
-      const screenWidth = Number(systemInfo.screenWidth || 0)
-      const screenHeight = Number(systemInfo.screenHeight || 0)
-      const windowWidth = Number(systemInfo.windowWidth || screenWidth || 0)
-      const windowHeight = Number(systemInfo.windowHeight || screenHeight || 0)
-      const isH5 = Taro.getEnv() === Taro.ENV_TYPE.WEB
-
-      if (isH5) {
-        return windowWidth >= 360 && windowWidth <= 430 && windowHeight >= 640
-      }
-
-      return screenWidth >= 384 && screenWidth <= 396 && screenHeight >= 834 && screenHeight <= 854
-    } catch {
-      return false
-    }
-  }, [])
-  const pageClassName = isFourCardMode ? 'hotel-list-page is-four-card-mode' : 'hotel-list-page'
+  const pageClassName = 'hotel-list-page'
 
   const cityTitle = useMemo(() => normalizeCityTitle(searchConditions.city), [searchConditions.city])
   const cityOptionValue = cityTitle.replace(/市$/, '')
